@@ -143,7 +143,7 @@ export default function CategoryCRUD() {
     setFormData({
       name: category.category_name,
       image: null,
-      imagePreview: category.category_image
+      imagePreview: category.category_Img
     });
   };
 
@@ -266,9 +266,9 @@ export default function CategoryCRUD() {
                 ) : (
                   <>
                     <div className="relative h-48 bg-gray-100">
-                      {category.category_image ? (
+                      {category.category_Img ? (
                         <img
-                          src={category.category_image}
+                          src={category.category_Img}
                           alt={category.category_name}
                           className="w-full h-full object-cover"
                         />
