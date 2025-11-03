@@ -61,7 +61,7 @@ export default function Navbar() {
           </Link>
           {securityStatus === 1&& (
             <button
-              onClick={() => console.log("Google Login clicked")}
+              onClick={handleGoogleLogin}
               className="font-semibold flex items-center gap-2 px-4 py-1 border-2 border-grey-100 rounded-full text-white hover:text-gray-600 transition-colors text-base sm:text-lg"
             >
               <img
