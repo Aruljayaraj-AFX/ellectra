@@ -43,7 +43,7 @@ async def authgoogle(request:Request,db=Depends(get_DB)):
             token = await user_new(email,fullname,db)
         else:
             token = await access_token(email,fullname)
-        frontend_url = f"https://ellectra-6n63.vercel.app/?token={token}"
+        frontend_url = f"https://ellectra.in/?token={token}"
         return RedirectResponse(url=frontend_url)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
