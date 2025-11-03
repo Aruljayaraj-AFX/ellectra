@@ -31,7 +31,7 @@ export default function MainLayout() {
           return;
         }
 
-        const res = await fetch("http://localhost:8000/ellectra/v1/users/security_check/", {
+        const res = await fetch("https://ellectra-beta.vercel.app/ellectra/v1/users/security_check/", {
           headers: { Authorization: `Bearer ${activeToken}` },
         });
 
