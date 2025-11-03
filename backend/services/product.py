@@ -69,7 +69,7 @@ async def get_pro_pag(db):
     
 async def get_pro_detail(pagination: int,catgories_id:str,db):
     try:
-        offset_value = (pagination - 1) * 10
+        offset_value = (pagination - 1) * 12
 
         data = (
             db.query(product_table)
