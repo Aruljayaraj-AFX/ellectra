@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, Search, ShoppingCart } from "lucide-react";
+import { ArrowRight, Search, ShoppingCart, Loader2 } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 export default function Product() {
@@ -8,7 +8,8 @@ export default function Product() {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
-  const [cartMsg, setCartMsg] = useState(""); // ✅ feedback message
+  const [cartMsg, setCartMsg] = useState("");
+  const [addingToCart, setAddingToCart] = useState(null); // ✅ track which product is being added
 
   const location = useLocation();
   const categoryId = location.search.replace("?", "").trim();
@@ -67,10 +68,13 @@ export default function Product() {
   // 🛒 ADD TO CART FUNCTION
   const handleAddToCart = async (productId) => {
     try {
-      setCartMsg(""); // reset message
+      setCartMsg("");
+      setAddingToCart(productId); // ✅ set loading state for this product
+      
       const token = localStorage.getItem("token");
       if (!token) {
-        setCartMsg("❌ Please log in to add items to your cart.");
+        setCartMsg("Please log in to add items to your cart.");
+        setAddingToCart(null);
         return;
       }
 
@@ -83,7 +87,7 @@ export default function Product() {
         },
         body: JSON.stringify({
           pro_id: productId,
-          quantity: 1, // ✅ default quantity 1
+          quantity: 1,
         }),
       });
 
@@ -97,8 +101,10 @@ export default function Product() {
       setTimeout(() => setCartMsg(""), 3000);
     } catch (err) {
       console.error("Add to cart error:", err);
-      setCartMsg(`❌ ${err.message || "Failed to add to cart"}`);
+      setCartMsg(` ${err.message || "Failed to add to cart"}`);
       setTimeout(() => setCartMsg(""), 4000);
+    } finally {
+      setAddingToCart(null); // ✅ clear loading state
     }
   };
 
@@ -193,10 +199,24 @@ export default function Product() {
                     </h1>
                     <button
                       onClick={() => handleAddToCart(product.product_id)}
-                      className="bg-[#22BDF5] text-white rounded-full px-4 py-2 hover:bg-[#19aee6] transition flex items-center gap-2"
+                      disabled={addingToCart === product.product_id}
+                      className={`rounded-full px-4 py-2 transition flex items-center gap-2 ${
+                        addingToCart === product.product_id
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#22BDF5] hover:bg-[#19aee6] text-white"
+                      }`}
                     >
-                      <ShoppingCart size={18} />
-                      Add to cart
+                      {addingToCart === product.product_id ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart size={18} />
+                          Add to cart
+                        </>
+                      )}
                     </button>
                   </div>
                 </div>
