@@ -18,6 +18,15 @@ export default function Navbar() {
       setLogin(false);
   }, []);
 
+  const handleGoogleLogin = async () => {
+  try {
+    setLogin(true);
+    window.location.href = "https://ellectra-beta.vercel.app/ellectra/v1/users/users_google";
+  } catch (error) {
+    console.error("Error starting Google login:", error);
+    setLogin(false);
+  }
+};
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50">
@@ -140,7 +149,7 @@ export default function Navbar() {
               {securityStatus === 1 && (
                 <li>
                   <button
-                    onClick={() => console.log("Google Login clicked")}
+                    onClick={handleGoogleLogin}
                     className="font-semibold flex items-center gap-2 mt-4 px-4 py-1 border-2 border-grey-100 rounded-full text-white hover:text-gray-600 transition-colors text-base sm:text-lg"
                   >
                     <img
