@@ -29,12 +29,12 @@ export default function Cart() {
 
   // keep address as state so we can update it after fetching user details
   const [defaultAddress, setDefaultAddress] = useState({
-    doorNo: "123",
-    address: "456 Main Street, Apartment 5B",
-    city: "New York",
-    landmark: "Near Central Park",
-    pincode: "10001",
-    phone: "+1 234-567-8900",
+    doorNo: "",
+    address: "",
+    city: "",
+    landmark: "",
+    pincode: "",
+    phone: "",
   });
 
   const [selectedAddress, setSelectedAddress] = useState("default");
@@ -528,7 +528,7 @@ export default function Cart() {
   // Checkout: call past_order/add for each selected item
   // On success: show a success popout, hide selected items, then after 20s show Past Orders
   // ----------------------
-  const handleCheckout = async () => {
+const handleCheckout = async () => {
     if (selectedItems.length === 0) return;
     const token = getToken();
     if (!token) {
@@ -536,9 +536,26 @@ export default function Cart() {
       return;
     }
 
+    // Validate address and phone before proceeding
+    const activeAddress = selectedAddress === "default" ? defaultAddress : addressForm;
+    const hasAddress = activeAddress.address && activeAddress.address.trim() !== "";
+    const hasCity = activeAddress.city && activeAddress.city.trim() !== "";
+    const hasPincode = activeAddress.pincode && activeAddress.pincode.trim() !== "";
+    const hasPhone = (activeAddress.phone || addressForm.phone || defaultAddress.phone) && 
+                     String(activeAddress.phone || addressForm.phone || defaultAddress.phone).trim() !== "";
+
+    if (!hasAddress || !hasCity || !hasPincode || !hasPhone) {
+      setError("Please complete your profile with delivery address and phone number before checkout.");
+      // Optionally scroll to address section or open edit mode
+      if (!isEditingAddress) {
+        setIsEditingAddress(true);
+      }
+      return;
+    }
+
     setCheckoutLoading(true);
     setError(null);
-
+    
     // Build address values (prefer the selected address, fallback to form/default)
     const addr = {
       delivery_address:
