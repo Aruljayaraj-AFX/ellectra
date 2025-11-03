@@ -36,23 +36,88 @@ async def access_token(email,fullname):
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=f"Token generation error: {str(e)}")
 
-async def user_new(email,username,db):
+async def user_new(email, username, db):
     try:
         all_user = db.query(user_table).all()
         existing_ids = {client.user_id for client in all_user}
         user_id = await generate_idno(existing_ids)
-        new_cli = user_table(user_id=user_id,user_email=email,user_name=username)
+        new_cli = user_table(user_id=user_id, user_email=email, user_name=username)
         db.add(new_cli)
         db.commit()
         db.refresh(new_cli)
-        token = await access_token(email,username)
+        
+        # Send welcome email
+        await send_welcome_email(email, username)
+        
+        token = await access_token(email, username)
         return token
     except HTTPException:
         raise  
-
     except Exception as e:
+        db.rollback()  # Rollback database changes on error
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
-    
+
+
+async def send_welcome_email(email: str, username: str):
+    """Send welcome email to new user"""
+    try:
+        import smtplib
+        from email.mime.text import MIMEText
+        from email.mime.multipart import MIMEMultipart
+        import os
+        
+        # Email configuration (use environment variables)
+        SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.gmail.com")
+        SMTP_PORT = int(os.getenv("SMTP_PORT", "587"))
+        SENDER_EMAIL = os.getenv("SENDER_EMAIL")
+        SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
+        
+        # Create email message
+        message = MIMEMultipart("alternative")
+        message["Subject"] = "Welcome to Our Platform!"
+        message["From"] = SENDER_EMAIL
+        message["To"] = email
+        
+        # Email body
+        text = f"""
+        Hi {username},
+        
+        Welcome to our platform! We're excited to have you on board.
+        
+        Your account has been successfully created.
+        
+        Best regards,
+        The Team
+        """
+        
+        html = f"""
+        <html>
+          <body>
+            <h2>Welcome to Our Platform!</h2>
+            <p>Hi <strong>{username}</strong>,</p>
+            <p>We're excited to have you on board! Your account has been successfully created.</p>
+            <p>Get started by exploring our features.</p>
+            <br>
+            <p>Best regards,<br>The Team</p>
+          </body>
+        </html>
+        """
+        
+        part1 = MIMEText(text, "plain")
+        part2 = MIMEText(html, "html")
+        message.attach(part1)
+        message.attach(part2)
+        
+        # Send email
+        with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
+            server.starttls()
+            server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            server.sendmail(SENDER_EMAIL, email, message.as_string())
+            
+    except Exception as e:
+        # Log the error but don't fail user creation
+        print(f"Failed to send welcome email: {str(e)}")
+            
 class user_Authorization(HTTPBearer):
     def __init__(self, auto_error: bool = True):
         super(user_Authorization, self).__init__(auto_error=auto_error)

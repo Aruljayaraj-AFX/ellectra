@@ -33,7 +33,7 @@ export default function Navbar() {
       <div className="relative z-10 flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 lg:py-5 bg-white/0.1 backdrop-blur-md">
         <div className="flex items-center gap-2">
           <img
-            src="https://res.cloudinary.com/dqhylblrx/image/upload/v1761972406/WhatsApp_Image_2025-11-01_at_09.55.10_ea8419a1-removebg-preview_jsxawj.png"
+            src="https://res.cloudinary.com/dosahgtni/image/upload/v1762153393/Ellectra_w01wap.png"
             alt="logo"
             className="w-7 h-7"
           />
