@@ -27,7 +27,7 @@ export default function Hero() {
   const handleGoogleLogin = async () => {
   try {
     setLogin(true);
-    window.location.href = "http://localhost:8000/ellectra/v1/users/users_google";
+    window.location.href = "https://ellectra-beta.vercel.app/ellectra/v1/users/users_google";
   } catch (error) {
     console.error("Error starting Google login:", error);
     setLogin(false);

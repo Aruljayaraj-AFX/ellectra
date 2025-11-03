@@ -35,7 +35,7 @@ export default function Profile() {
           return;
         }
 
-        const response = await fetch('http://localhost:8000/ellectra/v1/users/user_details', {
+        const response = await fetch('https://ellectra-beta.vercel.app/ellectra/v1/users/user_details', {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -115,7 +115,7 @@ export default function Profile() {
         user_pincode: editData.pincode,
       };
 
-      const response = await fetch('http://localhost:8000/ellectra/v1/users/user_info_change', {
+      const response = await fetch('https://ellectra-beta.vercel.app/ellectra/v1/users/user_info_change', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

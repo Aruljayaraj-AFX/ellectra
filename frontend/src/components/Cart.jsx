@@ -12,7 +12,7 @@ import {
 import Track from "./OrderTracker";
 
 export default function Cart() {
-  const API_BASE = "http://localhost:8000/ellectra/v1";
+  const API_BASE = "https://ellectra-beta.vercel.app/ellectra/v1";
 
   const [currentStep, setCurrentStep] = useState(1);
   const [items, setItems] = useState([]);

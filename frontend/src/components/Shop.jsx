@@ -13,7 +13,7 @@ export default function Shop() {
       try {
         setLoading(true);
         const res = await fetch(
-          `http://localhost:8000/ellectra/v1/products/cat_info?pagination=${page}`,
+          `https://ellectra-beta.vercel.app/ellectra/v1/products/cat_info?pagination=${page}`,
           {
             method: 'GET',
             headers: { accept: 'application/json' },

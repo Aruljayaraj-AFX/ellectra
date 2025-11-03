@@ -25,7 +25,7 @@ export default function Product() {
         }
 
         const res = await fetch(
-          `http://localhost:8000/ellectra/v1/products/pro_info?pagination=${page}&catgories_id=${categoryId}`,
+          `https://ellectra-beta.vercel.app/ellectra/v1/products/pro_info?pagination=${page}&catgories_id=${categoryId}`,
           {
             method: "GET",
             headers: { accept: "application/json" },
@@ -41,7 +41,7 @@ export default function Product() {
         }
 
         const pageRes = await fetch(
-          `http://localhost:8000/ellectra/v1/products/pag_pro_info`
+          `https://ellectra-beta.vercel.app/ellectra/v1/products/pag_pro_info`
         );
         const pageData = await pageRes.json();
         setTotalPages(pageData.total_pages || 1);
@@ -74,7 +74,7 @@ export default function Product() {
         return;
       }
 
-      const res = await fetch("http://localhost:8000/ellectra/v1/cart/add", {
+      const res = await fetch("https://ellectra-beta.vercel.app/ellectra/v1/cart/add", {
         method: "POST",
         headers: {
           accept: "application/json",

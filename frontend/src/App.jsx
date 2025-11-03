@@ -7,6 +7,7 @@ import Shop from "./components/Shop";
 import Product from "./components/Product";
 import Cart from "./components/Cart";
 import Profile from "./components/Profile";
+import Test from "./components/test"
 
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/Shop/Product" element={<Product />} /> 
           <Route path="/Cart" element={<Cart />} /> 
           <Route path="/Profile" element={<Profile />} />
+          <Route path="/admin-testforupload" element={<Test />} />
         </Route>
       </Routes>
     </Suspense>

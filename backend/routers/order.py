@@ -6,6 +6,7 @@ from models.product import product_table
 from models.user import user_table
 from services.user import user_Authorization
 from schema.order_schema import PastOrderCreate, PastOrderUpdate
+from models.cart_table import cart_table
 import uuid
 from sqlalchemy import func
 
@@ -20,8 +21,6 @@ async def generate_order_id(db: Session):
         if order_id not in existing_ids:
             return order_id
 
-
-# 🛒 Create new order (place order)
 @router_past_order.post("/past_order/add")
 async def add_past_order(
     order: PastOrderCreate,
@@ -59,8 +58,22 @@ async def add_past_order(
         )
 
         db.add(new_order)
+        
+        # ✅ Delete the product from cart after order is placed
+        cart_item = db.query(cart_table).filter(
+            cart_table.user_id == user.user_id,
+            cart_table.pro_id == order.pro_id
+        ).first()
+        
+        if cart_item:
+            db.delete(cart_item)
+        
         db.commit()
-        return {"message": "✅ Order placed successfully"}
+        return {
+            "message": "✅ Order placed successfully",
+            "order_id": new_order.order_id,
+            "cart_item_removed": bool(cart_item)
+        }
 
     except HTTPException:
         raise
