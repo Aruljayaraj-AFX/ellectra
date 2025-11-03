@@ -50,7 +50,7 @@ export default function Navbar() {
     fetchCart();
 
     // 🔁 Refresh every 15 seconds
-    const interval = setInterval(fetchCart, 1000);
+    const interval = setInterval(fetchCart, 8000);
     return () => clearInterval(interval);
   }, [login]);
 
