@@ -157,7 +157,7 @@ export default function Hero() {
             onClick={handleGoogleLogin}
             className="font-semibold flex items-center gap-2 px-7 py-3 border-2 border-grey-100 rounded-full  text-white hover:text-gray-600 transition-colors text-base sm:text-lg"
           >
-            <img src="https://res.cloudinary.com/dqhylblrx/image/upload/v1761985513/icons8-google-48_diheja.png" alt="google" className="w-5 h-5"/>Login
+            <img src="https://res.cloudinary.com/dqhylblrx/image/upload/v1761985513/icons8-google-48_diheja.png" alt="google" className="w-5 h-5"/>ACCESS KEY
           </button>
           }
         </div>

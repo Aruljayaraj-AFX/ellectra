@@ -69,7 +69,7 @@ export default function Navbar() {
                 alt="google"
                 className="w-5 h-5"
               />
-              Login
+              ACCESS KEY
             </button>
           )}
           {securityStatus === 0 && (
