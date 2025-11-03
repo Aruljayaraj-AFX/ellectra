@@ -1,0 +1,26 @@
+// src/App.jsx
+import React, { Suspense, lazy } from "react";
+import { Routes, Route } from "react-router-dom";
+import MainLayout from "./layouts/MainLayouts";
+const Home = lazy(() => import("./Pages/Home"));
+import Shop from "./components/Shop";
+import Product from "./components/Product";
+import Cart from "./components/Cart";
+import Profile from "./components/Profile";
+
+
+export default function App() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Routes>
+        <Route element={<MainLayout />}>
+          <Route path="/" element={<Home />} /> 
+          <Route path="/Shop" element={<Shop />} /> 
+          <Route path="/Shop/Product" element={<Product />} /> 
+          <Route path="/Cart" element={<Cart />} /> 
+          <Route path="/Profile" element={<Profile />} />
+        </Route>
+      </Routes>
+    </Suspense>
+  );
+}
