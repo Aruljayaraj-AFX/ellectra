@@ -174,17 +174,16 @@ export default function Navbar() {
               {/* Cart with Badge */}
               <li>
                 <Link
-                  to="/Cart"
-                  className="relative block hover:text-gray-500 transition-colors py-2"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                >
-                  Cart
-                  {cartCount > 0 && (
-                    <span className="absolute top-1 left-12 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                      {cartCount}
-                    </span>
-                  )}
-                </Link>
+            to="/Cart"
+            className="relative hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold"
+          >
+            Cart
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
+          </Link>
               </li>
 
               {securityStatus === 1 && (
