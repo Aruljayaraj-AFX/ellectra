@@ -1,36 +1,74 @@
-import {useContext, useState, useEffect } from "react";
+import { useContext, useState, useEffect } from "react";
 import { ClientContext } from "../layouts/MainLayouts.jsx";
 import { Link } from "react-router-dom";
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [login, setLogin] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const { securityStatus } = useContext(ClientContext);
 
+  const BASE_URL = "https://ellectra-beta.vercel.app/ellectra/v1";
+
+  // 🧠 Check token on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
-    console.log("hlo")
-    if (token){
-      console.log("chcek"); 
-      setLogin(true);
-    }
-    else 
-      setLogin(false);
+    if (token) setLogin(true);
+    else setLogin(false);
   }, []);
 
+  // 🛒 Fetch Cart Count (continuous check)
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const fetchCart = async () => {
+      try {
+        const res = await fetch(`${BASE_URL}/cart/view`, {
+          method: "GET",
+          headers: {
+            accept: "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch cart");
+        const data = await res.json();
+
+        if (data?.cart) {
+          setCartCount(data.cart.length);
+        } else {
+          setCartCount(0);
+        }
+      } catch (err) {
+        console.error("Cart fetch error:", err);
+        setCartCount(0);
+      }
+    };
+
+    // Initial call
+    fetchCart();
+
+    // 🔁 Refresh every 15 seconds
+    const interval = setInterval(fetchCart, 1000);
+    return () => clearInterval(interval);
+  }, [login]);
+
+  // 🔐 Google login handler
   const handleGoogleLogin = async () => {
-  try {
-    setLogin(true);
-    window.location.href = "https://ellectra-beta.vercel.app/ellectra/v1/users/users_google";
-  } catch (error) {
-    console.error("Error starting Google login:", error);
-    setLogin(false);
-  }
-};
+    try {
+      setLogin(true);
+      window.location.href = `${BASE_URL}/users/users_google`;
+    } catch (error) {
+      console.error("Error starting Google login:", error);
+      setLogin(false);
+    }
+  };
 
   return (
     <nav className="fixed top-0 left-0 w-full z-50">
-      <div className="relative z-10 flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 lg:py-5 bg-white/0.1 backdrop-blur-md">
+      <div className="relative z-10 flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 lg:py-5 bg-white/10 backdrop-blur-md">
+        {/* Logo */}
         <div className="flex items-center gap-2">
           <img
             src="https://res.cloudinary.com/dosahgtni/image/upload/v1762153393/Ellectra_w01wap.png"
@@ -39,26 +77,29 @@ export default function Navbar() {
           />
         </div>
 
+        {/* Desktop Menu */}
         <div className="hidden lg:flex items-center gap-6 xl:gap-8">
-          <Link
-            to="/"
-            className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold"
-          >
+          <Link to="/" className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold">
             Home
           </Link>
-          <Link
-            to="/Shop"
-            className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold"
-          >
+          <Link to="/Shop" className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold">
             Shop
           </Link>
+
+          {/* 🛒 Cart with Notification Badge */}
           <Link
             to="/Cart"
-            className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold"
+            className="relative hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold"
           >
             Cart
+            {cartCount > 0 && (
+              <span className="absolute -top-2 -right-3 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {cartCount}
+              </span>
+            )}
           </Link>
-          {securityStatus === 1&& (
+
+          {securityStatus === 1 && (
             <button
               onClick={handleGoogleLogin}
               className="font-semibold flex items-center gap-2 px-4 py-1 border-2 border-grey-100 rounded-full text-white hover:text-gray-600 transition-colors text-base sm:text-lg"
@@ -71,6 +112,7 @@ export default function Navbar() {
               ACCESS KEY
             </button>
           )}
+
           {securityStatus === 0 && (
             <Link to="/Profile">
               <img
@@ -82,6 +124,7 @@ export default function Navbar() {
           )}
         </div>
 
+        {/* Mobile Menu Button */}
         <div className="lg:hidden flex items-center py-3 gap-3">
           <button
             className="p-2 text-blue-400"
@@ -95,25 +138,16 @@ export default function Navbar() {
               viewBox="0 0 24 24"
             >
               {isMobileMenuOpen ? (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M6 18L18 6M6 6l12 12"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               ) : (
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 6h16M4 12h16M4 18h16"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               )}
             </svg>
           </button>
         </div>
       </div>
 
+      {/* Mobile Dropdown */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full shadow-lg z-50 bg-black/20 backdrop-blur-md">
           <div className="relative z-10 px-4 py-4 space-y-4">
@@ -136,15 +170,23 @@ export default function Navbar() {
                   Shop
                 </Link>
               </li>
+
+              {/* Cart with Badge */}
               <li>
                 <Link
                   to="/Cart"
-                  className="block hover:text-gray-500 transition-colors py-2"
+                  className="relative block hover:text-gray-500 transition-colors py-2"
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   Cart
+                  {cartCount > 0 && (
+                    <span className="absolute top-1 left-12 bg-red-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                      {cartCount}
+                    </span>
+                  )}
                 </Link>
               </li>
+
               {securityStatus === 1 && (
                 <li>
                   <button
@@ -160,6 +202,7 @@ export default function Navbar() {
                   </button>
                 </li>
               )}
+
               {securityStatus === 0 && (
                 <li>
                   <Link
