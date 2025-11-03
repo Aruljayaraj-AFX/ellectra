@@ -26,3 +26,7 @@ async def get_cat_handle(pagination:int,catgories_id:str,db=Depends(get_DB)):
 @router_product.get("all_cart")
 async def get_all_cat_name(db=Depends(get_DB)):
     return await all_cat(db)
+
+@router_product.get("all_products")
+async def get_all_pro_name(db=Depends(get_DB)):
+    return await all_pro(db)

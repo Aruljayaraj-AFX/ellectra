@@ -9,6 +9,7 @@ import Cart from "./components/Cart";
 import Profile from "./components/Profile";
 import Test from "./components/test";
 import Cartoper from "./components/cartcrud";
+import Proadmin from "./components/product-admin"
 
 
 export default function App() {
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/Profile" element={<Profile />} />
           <Route path="/admin-testforupload" element={<Test />} />
           <Route path="/admin-catogeries" element={<Cartoper />} />
+          <Route path="/admin-pro" element={<Proadmin />} />
         </Route>
       </Routes>
     </Suspense>

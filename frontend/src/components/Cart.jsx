@@ -730,7 +730,7 @@ export default function Cart() {
                       </div>
                     </div>
                     <div className="col-span-2 text-center">
-                      <p className="font-semibold">${item.price.toFixed(2)}</p>
+                      <p className="font-semibold">₹{item.price.toFixed(2)}</p>
                     </div>
                     <div className="col-span-2 flex justify-center items-center gap-3">
                       <button
@@ -754,7 +754,7 @@ export default function Cart() {
                       </button>
                     </div>
                     <div className="col-span-2 text-center">
-                      <p className="font-bold text-yellow-500 text-lg">${(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="font-bold text-yellow-500 text-lg">₹{(item.price * item.quantity).toFixed(2)}</p>
                     </div>
                     <div className="col-span-1 flex justify-center">
                       <button
@@ -970,7 +970,7 @@ export default function Cart() {
             <div className="space-y-3 mb-4">
               <div className="flex justify-between text-sm sm:text-base">
                 <span>Total Price</span>
-                <span className="font-semibold">${subtotal.toFixed(2)}</span>
+                <span className="font-semibold">₹{subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between text-sm sm:text-base">
                 <span>Delivery</span>
@@ -978,11 +978,11 @@ export default function Cart() {
               </div>
               <div className="flex justify-between text-sm sm:text-base">
                 <span>Platform Fee ({(PLATFORM_FEE_PERCENT * 100).toFixed(2)}%)</span>
-                <span className="font-semibold">${platformFee.toFixed(2)}</span>
+                <span className="font-semibold">₹{platformFee.toFixed(2)}</span>
               </div>
               <div className="flex justify-between pt-3 border-t border-yellow-300">
                 <span className="font-semibold text-sm sm:text-base">Cart Total</span>
-                <span className="font-bold text-lg sm:text-xl">${total.toFixed(2)}</span>
+                <span className="font-bold text-lg sm:text-xl">₹{total.toFixed(2)}</span>
               </div>
             </div>
             <button
