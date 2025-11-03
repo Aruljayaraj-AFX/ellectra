@@ -116,6 +116,7 @@ async def all_cat(db):
                 {
                     "category_id": row.cat_id,
                     "category_name": row.cat_name,
+                    "category_Img": row.cat_img
                 }
                 for row in data
             ]
