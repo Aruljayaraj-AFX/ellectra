@@ -75,7 +75,7 @@ async def get_pro_detail(pagination: int,catgories_id:str,db):
             db.query(product_table)
             .filter(product_table.cat_id == catgories_id)
             .offset(offset_value)
-            .limit(10)
+            .limit(12)
             .all()
         )
 
