@@ -35,7 +35,7 @@ export default function Navbar() {
           <img
             src="https://res.cloudinary.com/dosahgtni/image/upload/v1762153393/Ellectra_w01wap.png"
             alt="logo"
-            className="w-7 h-7"
+            className="w-8 h-7"
           />
           <span className="text-xl font-bold text-[#22BDF5]">Ellectra</span>
         </div>
