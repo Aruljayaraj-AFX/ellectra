@@ -15,47 +15,58 @@ export default function Product() {
   const categoryId = location.search.replace("?", "").trim();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setLoading(true);
+  const fetchProductsAndPages = async () => {
+    try {
+      setLoading(true);
 
-        if (!categoryId) {
-          console.warn("No category ID found in URL.");
-          setProducts([]);
-          return;
-        }
-
-        const res = await fetch(
-          `https://ellectra-beta.vercel.app/ellectra/v1/products/pro_info?pagination=${page}&catgories_id=${categoryId}`,
-          {
-            method: "GET",
-            headers: { accept: "application/json" },
-          }
-        );
-
-        const data = await res.json();
-
-        if (data && data.data) {
-          setProducts(data.data);
-        } else {
-          setProducts([]);
-        }
-
-        const pageRes = await fetch(
-          `https://ellectra-beta.vercel.app/ellectra/v1/products/pag_pro_info`
-        );
-        const pageData = await pageRes.json();
-        setTotalPages(pageData.total_pages || 1);
-      } catch (error) {
-        console.error("Error fetching products:", error);
+      if (!categoryId) {
+        console.warn("No category ID found in URL.");
         setProducts([]);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
-    fetchProducts();
-  }, [page, categoryId]);
+      // ⚡ Run both APIs concurrently
+      const [productRes, pageRes] = await Promise.all([
+        fetch(
+          `https://ellectra-beta.vercel.app/ellectra/v1/products/pro_info?pagination=${page}&catgories_id=${categoryId}`,
+          { method: "GET", headers: { accept: "application/json" } }
+        ),
+        fetch(
+          `https://ellectra-beta.vercel.app/ellectra/v1/products/pag_pro_info?catgories_id=${categoryId}`,
+          { method: "GET", headers: { accept: "application/json" } }
+        ),
+      ]);
+
+      const [productData, pageData] = await Promise.all([
+        productRes.json(),
+        pageRes.json(),
+      ]);
+
+      // 🛍️ Set product data
+      if (productData && productData.data) {
+        setProducts(productData.data);
+      } else {
+        setProducts([]);
+      }
+
+      // 📄 Round up total pages from response
+      const total = pageData?.totalpages
+        ? Math.ceil(Number(pageData.totalpages))
+        : 1;
+      setTotalPages(total);
+      console.log(total)
+      console.log(pageData)
+    } catch (error) {
+      console.error("Error fetching products:", error);
+      setProducts([]);
+      setTotalPages(1);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchProductsAndPages();
+}, [page, categoryId]);
 
   const filteredProducts = products.filter((product) =>
     product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
