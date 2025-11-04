@@ -60,7 +60,7 @@ async def get_cat_detail(pagination: int, db):
 async def get_pro_pag(db, categories_id: str):
     try:
         total_rows = db.query(product_table).filter(
-            product_table.categories_id == categories_id
+            product_table.cat_id == categories_id
         ).count()
 
         total_pages = (total_rows + 19) // 20 
