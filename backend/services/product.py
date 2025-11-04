@@ -57,16 +57,26 @@ async def get_cat_detail(pagination: int, db):
         )  
 
 
-async def get_pro_pag(db):
+async def get_pro_pag(db, categories_id: int):
     try:
-        total_rows = db.query(product_table).count()
-        total_pages = total_rows/20
-        return {"totalpages":total_pages}
-    except HTTPException as e:
+        total_rows = db.query(product_table).filter(
+            product_table.categories_id == categories_id
+        ).count()
+
+        total_pages = (total_rows + 19) // 20 
+
+        return {
+            "total_pages": total_pages
+        }
+
+    except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,detail=f"retrival error: {repr(e)}")
-    
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"retrieval error: {repr(e)}"
+        )
+        
 async def get_pro_detail(pagination: int,catgories_id:str,db):
     try:
         offset_value = (pagination - 1) * 12
