@@ -10,6 +10,7 @@ import Profile from "./components/Profile";
 import Test from "./components/test";
 import Cartoper from "./components/cartcrud";
 import Proadmin from "./components/product-admin"
+import visting-card from "./components/visting-card"
 
 
 export default function App() {
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/admin-testforupload" element={<Test />} />
           <Route path="/admin-catogeries" element={<Cartoper />} />
           <Route path="/admin-pro" element={<Proadmin />} />
+          <Route path="/welcome-dude/visting-via/qr-code" element={<visiting-card/>}/>
         </Route>
       </Routes>
     </Suspense>

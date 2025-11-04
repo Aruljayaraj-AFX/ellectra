@@ -38,4 +38,4 @@ app.include_router(router_cart, prefix="/ellectra/v1", tags=["Cart"])
 app.include_router(router_past_order, prefix="/ellectra/v1", tags=["orders"])
 
 if __name__ == "__main__":
-    uvicorn.run("main:app",host="localhost",port=8000,reload=True)
+    uvicorn.run("main:app",host="localhost",port=8001,reload=True)

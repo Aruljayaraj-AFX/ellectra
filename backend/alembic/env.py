@@ -6,7 +6,6 @@ from sqlalchemy import pool
 from alembic import context
 from models.user import Base
 from models.cart_table import cart_table
-from models.order_status import order_tracking_status
 from models.order_table import past_order_table
 from models.product import product_table
 

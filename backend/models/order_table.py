@@ -13,6 +13,7 @@ class past_order_table(Base):
     quantity = Column(Integer, nullable=False)
     total_amount = Column(Float, nullable=False)
     payment_status = Column(String, nullable=False, default="Pending")
+    status = Column(String, nullable=True)
 
     # Delivery details
     delivery_address = Column(String, nullable=True)
