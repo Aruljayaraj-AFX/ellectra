@@ -3,7 +3,7 @@ from authlib.integrations.starlette_client import OAuth
 from models.user import user_table
 from database.DB import get_DB
 from dotenv import load_dotenv
-from services.product import get_pro_pag,get_pro_detail,get_cat_pag,get_cat_detail,all_cat
+from services.product import get_pro_detail,get_cat_pag,get_cat_detail,all_cat
 
 router_product=APIRouter()
 
@@ -22,7 +22,3 @@ async def get_cat_handle(catgories_id:str,db=Depends(get_DB)):
 @router_product.get("all_cart")
 async def get_all_cat_name(db=Depends(get_DB)):
     return await all_cat(db)
-
-@router_product.get("all_products")
-async def get_all_pro_name(db=Depends(get_DB)):
-    return await all_pro(db)
