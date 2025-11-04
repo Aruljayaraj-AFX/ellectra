@@ -57,7 +57,7 @@ async def get_cat_detail(pagination: int, db):
         )  
 
 
-async def get_pro_pag(db, categories_id: int):
+async def get_pro_pag(db, categories_id: str):
     try:
         total_rows = db.query(product_table).filter(
             product_table.categories_id == categories_id
