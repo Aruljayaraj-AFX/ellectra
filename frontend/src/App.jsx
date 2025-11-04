@@ -9,9 +9,8 @@ import Cart from "./components/Cart";
 import Profile from "./components/Profile";
 import Test from "./components/test";
 import Cartoper from "./components/cartcrud";
-import Proadmin from "./components/product-admin"
-import vistingcard from "./components/visting-card"
-
+import Proadmin from "./components/product-admin";
+import VisitingCard from "./components/visitingcard";
 
 export default function App() {
   return (
@@ -26,8 +25,11 @@ export default function App() {
           <Route path="/admin-testforupload" element={<Test />} />
           <Route path="/admin-catogeries" element={<Cartoper />} />
           <Route path="/admin-pro" element={<Proadmin />} />
-          <Route path="/welcome-dude/visting-via/qr-code" element={<vistingcard/>}/>
         </Route>
+        <Route
+          path="/welcome-dude/visting-via/qr-code"
+          element={<VisitingCard />}
+        />
       </Routes>
     </Suspense>
   );
