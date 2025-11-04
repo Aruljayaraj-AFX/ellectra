@@ -1,86 +1,59 @@
 import { useState, useEffect } from "react";
-import { ArrowRight, Search, ShoppingCart, Loader2 } from "lucide-react";
-import { Link, useLocation } from "react-router-dom";
+import { Search, ShoppingCart, Loader2 } from "lucide-react";
+import { useLocation } from "react-router-dom";
 
 export default function Product() {
   const [searchQuery, setSearchQuery] = useState("");
   const [products, setProducts] = useState([]);
-  const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [cartMsg, setCartMsg] = useState("");
-  const [addingToCart, setAddingToCart] = useState(null); // ✅ track which product is being added
+  const [addingToCart, setAddingToCart] = useState(null);
 
   const location = useLocation();
   const categoryId = location.search.replace("?", "").trim();
 
   useEffect(() => {
-  const fetchProductsAndPages = async () => {
-    try {
-      setLoading(true);
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
 
-      if (!categoryId) {
-        console.warn("No category ID found in URL.");
-        setProducts([]);
-        return;
-      }
+        if (!categoryId) {
+          console.warn("No category ID found in URL.");
+          setProducts([]);
+          return;
+        }
 
-      // ⚡ Run both APIs concurrently
-      const [productRes, pageRes] = await Promise.all([
-        fetch(
-          `https://ellectra-beta.vercel.app/ellectra/v1/products/pro_info?pagination=${page}&catgories_id=${categoryId}`,
+        const productRes = await fetch(
+          `https://ellectra-beta.vercel.app/ellectra/v1/products/pro_info?catgories_id=${categoryId}`,
           { method: "GET", headers: { accept: "application/json" } }
-        ),
-        fetch(
-          `https://ellectra-beta.vercel.app/ellectra/v1/products/pag_pro_info?catgories_id=${categoryId}`,
-          { method: "GET", headers: { accept: "application/json" } }
-        ),
-      ]);
+        );
 
-      const [productData, pageData] = await Promise.all([
-        productRes.json(),
-        pageRes.json(),
-      ]);
+        const productData = await productRes.json();
 
-      // 🛍️ Set product data
-      if (productData && productData.data) {
-        setProducts(productData.data);
-      } else {
+        if (productData && productData.data) {
+          setProducts(productData.data);
+        } else {
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
         setProducts([]);
+      } finally {
+        setLoading(false);
       }
+    };
 
-      // 📄 Round up total pages from response
-      const total = pageData?.totalpages
-        ? Math.ceil(Number(pageData.totalpages))
-        : 1;
-      setTotalPages(total);
-      console.log(total)
-      console.log(pageData)
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      setProducts([]);
-      setTotalPages(1);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchProductsAndPages();
-}, [page, categoryId]);
+    fetchProducts();
+  }, [categoryId]);
 
   const filteredProducts = products.filter((product) =>
     product.product_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const handlePageChange = (newPage) => {
-    if (newPage >= 1 && newPage <= totalPages) setPage(newPage);
-  };
-
-  // 🛒 ADD TO CART FUNCTION
   const handleAddToCart = async (productId) => {
     try {
       setCartMsg("");
-      setAddingToCart(productId); // ✅ set loading state for this product
+      setAddingToCart(productId);
       
       const token = localStorage.getItem("token");
       if (!token) {
@@ -112,10 +85,10 @@ export default function Product() {
       setTimeout(() => setCartMsg(""), 3000);
     } catch (err) {
       console.error("Add to cart error:", err);
-      setCartMsg(` ${err.message || "Failed to add to cart"}`);
+      setCartMsg(`${err.message || "Failed to add to cart"}`);
       setTimeout(() => setCartMsg(""), 4000);
     } finally {
-      setAddingToCart(null); // ✅ clear loading state
+      setAddingToCart(null);
     }
   };
 
@@ -152,7 +125,7 @@ export default function Product() {
         </div>
       </div>
 
-      {/* 🟢 Cart feedback message */}
+      {/* Cart feedback message */}
       {cartMsg && (
         <div
           className={`text-center py-3 font-semibold ${
@@ -246,39 +219,6 @@ export default function Product() {
           </div>
         )}
       </div>
-
-      {/* Pagination */}
-      {!loading && filteredProducts.length > 0 && (
-        <div className="flex justify-center items-center gap-4 pb-5">
-          <button
-            onClick={() => handlePageChange(page - 1)}
-            disabled={page === 1}
-            className={`px-4 py-2 rounded-lg border-2 ${
-              page === 1
-                ? "border-gray-300 text-gray-400"
-                : "border-[#22BDF5] text-[#22BDF5] hover:bg-[#22BDF5] hover:text-white"
-            } transition`}
-          >
-            Prev
-          </button>
-
-          <span className="px-3 py-2 text-gray-700 font-medium">
-            Page {page} of {totalPages}
-          </span>
-
-          <button
-            onClick={() => handlePageChange(page + 1)}
-            disabled={page === totalPages}
-            className={`px-4 py-2 rounded-lg border-2 ${
-              page === totalPages
-                ? "border-gray-300 text-gray-400"
-                : "border-[#22BDF5] text-[#22BDF5] hover:bg-[#22BDF5] hover:text-white"
-            } transition`}
-          >
-            Next
-          </button>
-        </div>
-      )}
     </div>
   );
 }
