@@ -173,6 +173,7 @@ async def new_product(cat_id,product_name,product_description,price,product_link
 async def edit_product(pro_id,cat_id,product_name,product_description,price,product_link,token, db: Session):
     verify_admin_access(token)
     try:
+        print("jlo")
         pro = db.query(product_table).filter(product_table.pro_id == pro_id).first()
         if not pro:
             raise HTTPException(status_code=404, detail="Product not found")
@@ -191,6 +192,18 @@ async def edit_product(pro_id,cat_id,product_name,product_description,price,prod
     except SQLAlchemyError as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "error": "Unexpected Error",
+                "message": str(e)
+            }
+        )
+    except HTTPException:
+        raise
+
 
 
 async def delete_product(product_id: str, token, db: Session):

@@ -77,7 +77,7 @@ async def edit_product_handle(
         product_link = product_link.get("secure_url")
     except Exception as e:
         return JSONResponse({"error": str(e)}, status_code=500)
-    return await edit_product(cat_id,product_name,product_description,price,product_link,token, db)
+    return await edit_product(pro_id,cat_id,product_name,product_description,price,product_link,token, db)
 
 
 @router_admin.delete("/delete_product", summary="Delete product by ID")
