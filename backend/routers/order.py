@@ -154,8 +154,7 @@ async def view_past_orders(
         offset = (page - 1) * limit
 
         # ✅ Build query with optional status filter - DON'T call .all() yet!
-        query = db.query(past_order_table).all()
-        
+        query = db.query(past_order_table)
         if status:
             query = query.filter(past_order_table.status == status)
         
@@ -381,8 +380,8 @@ async def view_past_orders(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error viewing past orders: {str(e)}")
-    
-        
+
+
 # 🔄 Update Payment Status and Order Status Only
 @router_past_order.patch("/past_order/update-status/{order_id}")
 async def update_order_status(
