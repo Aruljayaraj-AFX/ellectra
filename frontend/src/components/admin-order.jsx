@@ -176,21 +176,24 @@ const OrderManagementSystem = () => {
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
+  return new Date(dateString).toLocaleString('en-IN', {
+    year: 'numeric',
+    month: 'short', // e.g. "Nov"
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true // use 12-hour clock (optional)
+  });
+};
 
-  const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount);
-  };
+// ✅ Format currency in Indian Rupees (₹)
+const formatCurrency = (amount) => {
+  return new Intl.NumberFormat('en-IN', {
+    style: 'currency',
+    currency: 'INR',
+    maximumFractionDigits: 2
+  }).format(amount);
+};
 
   // Filter and search orders
   const filteredOrders = orders.filter(order => {
@@ -295,10 +298,10 @@ const OrderManagementSystem = () => {
                       <div className="flex-1">
                         <div className="flex flex-wrap items-center gap-3 mb-3">
                           <h3 className="text-xl font-bold text-gray-900">{order.order_id}</h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border {getStatusColor(order.status)}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.status)}`}>
                             {order.status}
                           </span>
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border {getStatusColor(order.payment_status)}`}>
+                          <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${getStatusColor(order.payment_status)}`}>
                             {order.payment_status}
                           </span>
                         </div>
@@ -495,13 +498,13 @@ const OrderManagementSystem = () => {
                   <div className="space-y-4">
                     <div>
                       <p className="text-sm text-gray-600 mb-2">Order Status</p>
-                      <span className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold border {getStatusColor(selectedOrder.status)}`}>
+                      <span className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(selectedOrder.status)}`}>
                         {selectedOrder.status}
                       </span>
                     </div>
                     <div>
                       <p className="text-sm text-gray-600 mb-2">Payment Status</p>
-                      <span className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold border {getStatusColor(selectedOrder.payment_status)}`}>
+                      <span className={`inline-flex px-4 py-2 rounded-full text-sm font-semibold border ${getStatusColor(selectedOrder.payment_status)}`}>
                         {selectedOrder.payment_status}
                       </span>
                     </div>
