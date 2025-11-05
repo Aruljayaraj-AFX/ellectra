@@ -131,6 +131,7 @@ async def add_past_order(
 
 
 # 📦 View user's past orders with PAGINATION (Optimized)
+# 📦 View user's past orders with PAGINATION (Optimized)
 @router_past_order.get("/past_order/view")
 async def view_past_orders(
     page: int = Query(1, ge=1, description="Page number"),
@@ -152,8 +153,10 @@ async def view_past_orders(
         # ✅ Calculate offset for pagination
         offset = (page - 1) * limit
 
-        # ✅ Build query with optional status filter
-        query = db.query(past_order_table).all()
+        # ✅ Build query with optional status filter - DON'T call .all() yet!
+        query = db.query(past_order_table).filter(
+            past_order_table.user_id == user.user_id
+        )
         
         if status:
             query = query.filter(past_order_table.status == status)
@@ -161,7 +164,7 @@ async def view_past_orders(
         # ✅ Get total count (for pagination info)
         total_count = query.count()
         
-        # ✅ Get paginated orders
+        # ✅ Get paginated orders - NOW call .all()
         orders = query.order_by(
             past_order_table.order_date.desc()
         ).offset(offset).limit(limit).all()
@@ -248,7 +251,6 @@ async def view_past_orders(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error viewing past orders: {str(e)}")
-
 
 # 📦 View single order details (Optimized)
 @router_past_order.get("/past_order/view/{order_id}")
