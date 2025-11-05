@@ -122,26 +122,31 @@ async def view_past_orders(
         if not user_email:
             raise HTTPException(status_code=401, detail="Invalid token")
 
+        # ✅ Verify user is authenticated
         user = db.query(user_table).filter(user_table.user_email == user_email).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # ✅ Get orders joined with product details
+        # ✅ Get ALL orders joined with product details AND user details
         orders = (
-            db.query(past_order_table, product_table)
+            db.query(past_order_table, product_table, user_table)
             .join(product_table, past_order_table.pro_id == product_table.pro_id)
-            .filter(past_order_table.user_id == user.user_id)
+            .join(user_table, past_order_table.user_id == user_table.user_id)
             .order_by(past_order_table.order_date.desc())
             .all()
         )
 
         if not orders:
-            return {"message": "You have no past orders yet"}
+            return {"message": "No orders found"}
 
         order_data = [
             {
                 "order_id": o.past_order_table.order_id,
                 "product_id": o.product_table.pro_id,
+                "user_id": o.past_order_table.user_id,
+                "user_phoneno": o.user_table.user_number,
+                "user_email": o.user_table.user_email,
+                "user_name": o.user_table.user_name,
                 "product_name": o.product_table.product_name,
                 "product_img": o.product_table.product_Img,
                 "price_per_item": float(o.product_table.price),
@@ -165,8 +170,7 @@ async def view_past_orders(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error viewing past orders: {str(e)}")
-
-
+    
 # 🔄 Update Payment Status and Order Status Only
 @router_past_order.patch("/past_order/update-status/{order_id}")
 async def update_order_status(
