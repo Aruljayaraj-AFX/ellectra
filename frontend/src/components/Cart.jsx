@@ -8,7 +8,6 @@ import {
   Minus,
 } from "lucide-react";
 
-
 import Track from "./OrderTracker";
 
 export default function Cart() {
@@ -16,18 +15,11 @@ export default function Cart() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [items, setItems] = useState([]);
-
-  // added missing states
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-
-  // per-item loading map: { [cartIdOrTempId]: true|false }
   const [loadingItems, setLoadingItems] = useState({});
-
-  // store raw user details object so we can reuse fields (like user_name) on save
   const [userDetails, setUserDetails] = useState(null);
 
-  // keep address as state so we can update it after fetching user details
   const [defaultAddress, setDefaultAddress] = useState({
     doorNo: "",
     address: "",
@@ -49,42 +41,27 @@ export default function Cart() {
   });
   const [paymentMethod, setPaymentMethod] = useState("cod");
 
-  // platform fee config: right now set percent to 0 (you can change it)
-  const PLATFORM_FEE_PERCENT = 0.0; // e.g., 0.02 for 2%
-
-  // store orders returned by backend so we can display order tickets
+  const PLATFORM_FEE_PERCENT = 0.0;
   const [pastOrders, setPastOrders] = useState([]);
-
-  // checkout loading
   const [checkoutLoading, setCheckoutLoading] = useState(false);
-
-  // success popout/modal state
   const [showSuccessPopout, setShowSuccessPopout] = useState(false);
   const [successPopoutMessage, setSuccessPopoutMessage] = useState("");
   const [createdOrdersForPopout, setCreatedOrdersForPopout] = useState([]);
   const [successTimerId, setSuccessTimerId] = useState(null);
 
-  // helper: set per-item loading flag
   const setItemLoading = (id, value) => {
     setLoadingItems((prev) => ({ ...prev, [id]: value }));
   };
 
-  // ----------------------
-  // Token helper
-  // ----------------------
   const getToken = () => {
     if (typeof window === "undefined") return null;
     return localStorage.getItem("token");
   };
 
-  // ----------------------
-  // Fetch user details and map to address fields
-  // - updated to handle keys you showed (user_doorno, user_address, user_city, user_pincode, Landmark, user_number, user_phone_no)
-  // ----------------------
   const fetchUserDetails = async (signal) => {
     try {
       const token = getToken();
-      if (!token) return; // no token: keep fallback
+      if (!token) return;
 
       const resp = await fetch(`${API_BASE}/users/user_details`, {
         method: "GET",
@@ -96,86 +73,31 @@ export default function Cart() {
       });
 
       if (!resp.ok) {
-        // don't throw — just keep fallback address
         console.warn("user_details fetch failed", resp.status);
         return;
       }
 
       const data = await resp.json();
-
-      // Try to find user object in common response shapes
       const userObj = data?.user || data?.user_details || data?.data || data;
-
-      // store raw user obj for later (used when saving)
       setUserDetails(userObj ?? null);
 
-      // Map many possible field names, including the user_ prefixed keys you provided
       const mapped = {
-        doorNo:
-          userObj?.user_doorno ??
-          userObj?.user_door_no ??
-          userObj?.user_doornumber ??
-          userObj?.doorNo ??
-          userObj?.door_no ??
-          userObj?.flat_no ??
-          userObj?.door_number ??
-          "",
-        address:
-          userObj?.user_address ??
-          userObj?.address ??
-          userObj?.address_line ??
-          userObj?.street ??
-          userObj?.addr ??
-          "",
-        city:
-          userObj?.user_city ??
-          userObj?.city ??
-          userObj?.town ??
-          userObj?.locality ??
-          "",
-        landmark:
-          // note: API used "Landmark" (capital L) in your example — handle that too
-          userObj?.Landmark ??
-          userObj?.landmark ??
-          userObj?.near ??
-          "",
-        pincode:
-          userObj?.user_pincode ??
-          userObj?.user_postal_code ??
-          userObj?.pincode ??
-          userObj?.pin ??
-          userObj?.postal_code ??
-          userObj?.zipcode ??
-          "",
-        // phone may be under several names; your API examples included user_phone_no and user_number
-        phone:
-          userObj?.user_phone_no ?? // new field you returned in the response
-          userObj?.user_number ?? // number field from your save curl / response
-          userObj?.user_phone ??
-          userObj?.user_mobile ??
-          userObj?.phone ??
-          userObj?.phone_number ??
-          userObj?.mobile ??
-          userObj?.contact ??
-          "",
+        doorNo: userObj?.user_doorno ?? userObj?.user_door_no ?? userObj?.doorNo ?? "",
+        address: userObj?.user_address ?? userObj?.address ?? "",
+        city: userObj?.user_city ?? userObj?.city ?? "",
+        landmark: userObj?.Landmark ?? userObj?.landmark ?? "",
+        pincode: userObj?.user_pincode ?? userObj?.pincode ?? "",
+        phone: userObj?.user_phone_no ?? userObj?.user_number ?? userObj?.phone ?? "",
       };
 
-      // normalize phone to string (if numeric)
       if (mapped.phone && typeof mapped.phone === "number") {
         mapped.phone = String(mapped.phone);
       }
 
-      // Only update if we have at least one non-empty field
       const hasAny = Object.values(mapped).some((v) => v && String(v).trim() !== "");
       if (hasAny) {
-        // merge with current defaultAddress (don't wipe missing fields)
         setDefaultAddress((prev) => ({ ...prev, ...mapped }));
-
-        // also prefill the edit form so user can immediately edit
-        setAddressForm((prev) => ({
-          ...prev,
-          ...mapped,
-        }));
+        setAddressForm((prev) => ({ ...prev, ...mapped }));
       }
     } catch (err) {
       if (err.name === "AbortError") return;
@@ -183,9 +105,6 @@ export default function Cart() {
     }
   };
 
-  // ----------------------
-  // Fetch cart (reusable)
-  // ----------------------
   const fetchCart = async (signal) => {
     try {
       setLoading(true);
@@ -214,7 +133,6 @@ export default function Cart() {
       }
 
       const data = await resp.json();
-
       const cartArray = Array.isArray(data) ? data : data.cart || [];
 
       const transformedItems = cartArray.map((item, index) => ({
@@ -227,11 +145,7 @@ export default function Cart() {
         price: parseFloat(item.price_per_item ?? item.price ?? 0),
         quantity: parseInt(item.quantity ?? 1, 10),
         selected: true,
-        image:
-          item.product_img ??
-          item.image_url ??
-          item.image ??
-          "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=200&h=200&fit=crop",
+        image: item.product_img ?? item.image_url ?? item.image ?? "https://images.unsplash.com/photo-1523381210434-271e8be1f52b?w=200&h=200&fit=crop",
       }));
 
       setItems(transformedItems);
@@ -245,9 +159,6 @@ export default function Cart() {
     }
   };
 
-  // ----------------------
-  // Mount: fetch user details then cart
-  // ----------------------
   useEffect(() => {
     const controller = new AbortController();
 
@@ -257,20 +168,14 @@ export default function Cart() {
     })();
 
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // cleanup success timer on unmount
   useEffect(() => {
     return () => {
       if (successTimerId) clearTimeout(successTimerId);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [successTimerId]);
 
-  // ----------------------
-  // Cart mutation APIs
-  // ----------------------
   const addToCartAPI = async (pro_id, quantity = 1) => {
     const token = getToken();
     if (!token) throw new Error("No token");
@@ -335,9 +240,6 @@ export default function Cart() {
     return resp.json();
   };
 
-  // ----------------------
-  // Handlers (increase/decrease/delete) — call APIs then refetch cart
-  // ----------------------
   const handleIncrease = async (item) => {
     const key = item.id ?? item.pro_id ?? `tmp-${Math.random()}`;
     setItemLoading(key, true);
@@ -409,38 +311,28 @@ export default function Cart() {
     }
   };
 
-  // ----------------------
-  // Address handlers
-  // ----------------------
   const handleAddressChange = (field, value) => {
     setAddressForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // When Edit Address is clicked, prefill the form with current defaultAddress
   const onEditAddress = () => {
     setAddressForm({ ...defaultAddress });
     setIsEditingAddress(true);
   };
 
-  // Save address locally and persist to backend (PUT /users/user_info_change)
-  // The payload keys follow the curl you provided.
   const saveAddress = async () => {
-    // basic validation (ensure required fields present)
-    // you can extend this as needed
     const token = getToken();
     if (!token) {
       setError("Not logged in");
       return;
     }
 
-    // prepare payload following API keys you showed in curl
     const payload = {
       landmark: addressForm.landmark ?? "",
       user_address: addressForm.address ?? "",
       user_city: addressForm.city ?? "",
       user_door_no: addressForm.doorNo ?? "",
-      user_name: userDetails?.user_name ?? userDetails?.userName ?? "", // best-effort user name
-      // convert phone to number if possible; backend in your example expects numeric user_number
+      user_name: userDetails?.user_name ?? userDetails?.userName ?? "",
       user_number: addressForm.phone ? Number(String(addressForm.phone).replace(/\D/g, "")) : null,
       user_pincode: addressForm.pincode ?? "",
     };
@@ -464,11 +356,7 @@ export default function Cart() {
         throw new Error(`Failed to save address: ${resp.status} ${text}`);
       }
 
-      const result = await resp.json();
-
-      // assume backend returns updated user object or success status; refetch to be safe
       await fetchUserDetails();
-      // update UI address immediately as well
       setDefaultAddress((prev) => ({ ...prev, ...addressForm }));
       setIsEditingAddress(false);
     } catch (err) {
@@ -491,9 +379,6 @@ export default function Cart() {
     setIsEditingAddress(false);
   };
 
-  // ----------------------
-  // Selection helpers & totals
-  // ----------------------
   const toggleItemSelection = (id) => {
     setItems((prev) => prev.map((item) => (item.id === id ? { ...item, selected: !item.selected } : item)));
   };
@@ -505,30 +390,18 @@ export default function Cart() {
 
   const selectedItems = items.filter((item) => item.selected);
   const subtotal = selectedItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-
-  // platform fee calculation (configurable via PLATFORM_FEE_PERCENT)
   const platformFee = parseFloat((subtotal * PLATFORM_FEE_PERCENT).toFixed(2));
-
-  // final total includes platformFee
   const total = subtotal + platformFee;
 
-  // ----------------------
-  // When user selects an address radio row, ensure phone shown matches that address
-  // ----------------------
   const onSelectAddress = (value) => {
     setSelectedAddress(value);
     if (value === "default") {
-      // ensure default phone is shown in addressForm (so UI updates)
       setAddressForm((prev) => ({ ...prev, phone: defaultAddress.phone ?? prev.phone }));
     }
-    // If you add more saved addresses later, handle them here
   };
 
-  // ----------------------
-  // Checkout: call past_order/add for each selected item
-  // On success: show a success popout, hide selected items, then after 20s show Past Orders
-  // ----------------------
-const handleCheckout = async () => {
+  // 🔥 NEW: Single API call for multiple items
+  const handleCheckout = async () => {
     if (selectedItems.length === 0) return;
     const token = getToken();
     if (!token) {
@@ -536,7 +409,6 @@ const handleCheckout = async () => {
       return;
     }
 
-    // Validate address and phone before proceeding
     const activeAddress = selectedAddress === "default" ? defaultAddress : addressForm;
     const hasAddress = activeAddress.address && activeAddress.address.trim() !== "";
     const hasCity = activeAddress.city && activeAddress.city.trim() !== "";
@@ -546,7 +418,6 @@ const handleCheckout = async () => {
 
     if (!hasAddress || !hasCity || !hasPincode || !hasPhone) {
       setError("Please complete your profile with delivery address and phone number before checkout.");
-      // Optionally scroll to address section or open edit mode
       if (!isEditingAddress) {
         setIsEditingAddress(true);
       }
@@ -555,89 +426,75 @@ const handleCheckout = async () => {
 
     setCheckoutLoading(true);
     setError(null);
-    
-    // Build address values (prefer the selected address, fallback to form/default)
-    const addr = {
-      delivery_address:
-        selectedAddress === "default"
-          ? `${defaultAddress.doorNo || ""}${defaultAddress.address ? ", " + defaultAddress.address : ""}`.trim()
-          : addressForm.address || defaultAddress.address || "",
-      city: selectedAddress === "default" ? defaultAddress.city : addressForm.city || defaultAddress.city,
-      pincode: selectedAddress === "default" ? defaultAddress.pincode : addressForm.pincode || defaultAddress.pincode,
-      landmark: selectedAddress === "default" ? defaultAddress.landmark : addressForm.landmark || defaultAddress.landmark,
-      user_number: Number(String(addressForm.phone || defaultAddress.phone || "").replace(/\D/g, "")) || null,
-    };
 
     try {
-      // send one request per selected item (model PastOrderCreate expects a single pro_id)
-      const postPromises = selectedItems.map(async (item) => {
-        const payload = {
-          pro_id: item.pro_id ?? item.id ?? String(item.name),
-          quantity: item.quantity,
-          total_amount: parseFloat((item.price * item.quantity).toFixed(2)),
-          payment_status: paymentMethod === "cod" ? "Pending" : "Paid",
-          delivery_address: addr.delivery_address,
-          city: addr.city,
-          pincode: String(addr.pincode ?? ""),
-          landmark: addr.landmark,
-          delivery_type: "Home Delivery",
-          user_number: addr.user_number,
-        };
+      // 🔥 Build items array for the new API
+      const orderItems = selectedItems.map(item => ({
+        pro_id: item.pro_id ?? item.id ?? String(item.name),
+        quantity: item.quantity
+      }));
 
-        const resp = await fetch(`${API_BASE}/past_order/add`, {
-          method: "POST",
-          headers: {
-            accept: "application/json",
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify(payload),
-        });
+      // 🔥 Single API call with multiple items
+      const payload = {
+        items: orderItems,
+        delivery_address: selectedAddress === "default"
+          ? `${defaultAddress.doorNo || ""}${defaultAddress.address ? ", " + defaultAddress.address : ""}`.trim()
+          : addressForm.address || defaultAddress.address || "",
+        city: selectedAddress === "default" ? defaultAddress.city : addressForm.city || defaultAddress.city,
+        pincode: String((selectedAddress === "default" ? defaultAddress.pincode : addressForm.pincode || defaultAddress.pincode) ?? ""),
+        landmark: (selectedAddress === "default" ? defaultAddress.landmark : addressForm.landmark || defaultAddress.landmark) ?? "",
+        delivery_type: "Home Delivery",
+        payment_status: paymentMethod === "cod" ? "Pending" : "Successfully"
+      };
 
-        if (!resp.ok) {
-          const text = await resp.text();
-          throw new Error(`Order create failed for ${item.name}: ${resp.status} ${text}`);
-        }
-
-        const data = await resp.json();
-        // standardize returned order object for local display
-        return {
-          orderResponse: data,
-          pro_id: payload.pro_id,
-          quantity: payload.quantity,
-          total_amount: payload.total_amount,
-          payment_status: payload.payment_status,
-          delivery_address: payload.delivery_address,
-          city: payload.city,
-          pincode: payload.pincode,
-          landmark: payload.landmark,
-          delivery_type: payload.delivery_type,
-        };
+      const resp = await fetch(`${API_BASE}/past_order/add`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
       });
 
-      const results = await Promise.all(postPromises);
+      if (!resp.ok) {
+        const text = await resp.text();
+        throw new Error(`Order create failed: ${resp.status} ${text}`);
+      }
 
-      // On success: hide all selected items from cart (your request said hide all -> we'll clear selected items)
+      const data = await resp.json();
+
+      // Remove selected items from cart
       setItems((prev) => prev.filter((it) => !it.selected));
 
-      // store created orders and show popout
-      setCreatedOrdersForPopout(results);
-      setPastOrders((prev) => [...results, ...prev]);
+      // Store order data
+      const orderData = {
+        order_id: data.order_id,
+        total_items: data.total_items,
+        total_amount: data.total_amount,
+        cart_items_removed: data.cart_items_removed,
+        items: selectedItems.map(item => ({
+          name: item.name,
+          quantity: item.quantity,
+          price: item.price
+        }))
+      };
 
-      // show success popout with festival message
-      setSuccessPopoutMessage("Order placed successfully — Fevestival!");
+      setCreatedOrdersForPopout([orderData]);
+      setPastOrders((prev) => [orderData, ...prev]);
+
+      // Show success message
+      setSuccessPopoutMessage("Order placed successfully — Festival!");
       setShowSuccessPopout(true);
 
-      // automatically hide popout and navigate to Past Orders after 20 seconds
+      // Auto-navigate after 20 seconds
       const timer = setTimeout(() => {
         setShowSuccessPopout(false);
         setCurrentStep(3);
         setCreatedOrdersForPopout([]);
-      }, 20000); // 20 seconds
+      }, 20000);
       setSuccessTimerId(timer);
 
-      // If user wants immediate redirection uncomment the line below:
-      // setCurrentStep(3);
     } catch (err) {
       console.error("Checkout error:", err);
       setError(err.message || "Checkout failed");
@@ -646,7 +503,6 @@ const handleCheckout = async () => {
     }
   };
 
-  // allow manual dismiss of popout and immediate navigation
   const dismissSuccessPopout = () => {
     if (successTimerId) {
       clearTimeout(successTimerId);
@@ -659,28 +515,17 @@ const handleCheckout = async () => {
     }
   };
 
-  // ----------------------
-  // Render content (unchanged structure but with added popout rendering)
-  // ----------------------
   const renderStepContent = () => {
     if (currentStep === 2) {
-        return(
-            <>
-            <Track />
-            </>
-        )
+      return <Track />;
     }
 
     if (currentStep === 3) {
-      return (
-      <>
-      </>
-      );
+      return <></>;
     }
 
     return (
       <>
-        {/* Shopping Cart Content */}
         <div className="flex-1">
           <div className="flex justify-between items-center mb-2">
             <h1 className="text-2xl sm:text-3xl font-bold">Shopping Bag</h1>
@@ -693,27 +538,16 @@ const handleCheckout = async () => {
           <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm">
             <div className="hidden lg:grid grid-cols-12 gap-4 pb-4 border-b border-gray-200 mb-6">
               <div className="col-span-1"></div>
-              <div className="col-span-4">
-                <h2 className="font-semibold">Product</h2>
-              </div>
-              <div className="col-span-2 text-center">
-                <h2 className="font-semibold">Price</h2>
-              </div>
-              <div className="col-span-2 text-center">
-                <h2 className="font-semibold">Quantity</h2>
-              </div>
-              <div className="col-span-2 text-center">
-                <h2 className="font-semibold">Total Price</h2>
-              </div>
-              <div className="col-span-1 text-center">
-                <h2 className="font-semibold">Action</h2>
-              </div>
+              <div className="col-span-4"><h2 className="font-semibold">Product</h2></div>
+              <div className="col-span-2 text-center"><h2 className="font-semibold">Price</h2></div>
+              <div className="col-span-2 text-center"><h2 className="font-semibold">Quantity</h2></div>
+              <div className="col-span-2 text-center"><h2 className="font-semibold">Total Price</h2></div>
+              <div className="col-span-1 text-center"><h2 className="font-semibold">Action</h2></div>
             </div>
 
             {loading && <p className="text-gray-500 text-center py-6">Loading cart...</p>}
             {error && <p className="text-red-500 text-center py-2">{error}</p>}
 
-            {/* Product Items */}
             {items.map((item) => {
               const key = item.id ?? item.pro_id;
               const itemLoading = !!loadingItems[key];
@@ -721,15 +555,9 @@ const handleCheckout = async () => {
 
               return (
                 <div key={key} className="border-b border-gray-100 last:border-0 py-4 lg:py-6">
-                  {/* Desktop Layout */}
                   <div className="hidden lg:grid grid-cols-12 gap-4 items-center">
                     <div className="col-span-1 flex justify-center">
-                      <input
-                        type="checkbox"
-                        checked={!!item.selected}
-                        onChange={() => toggleItemSelection(item.id)}
-                        className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      />
+                      <input type="checkbox" checked={!!item.selected} onChange={() => toggleItemSelection(item.id)} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
                     </div>
                     <div className="col-span-4 flex gap-4">
                       <img src={item.image} alt={item.name} className="w-24 h-24 rounded-lg object-cover bg-gray-100" />
@@ -737,65 +565,27 @@ const handleCheckout = async () => {
                         <p className="text-xs text-gray-500 uppercase mb-1">{item.category}</p>
                         <h3 className="font-semibold mb-2">{item.name}</h3>
                         <div className="text-xs text-gray-600 space-y-1">
-                          <p>
-                            Color <span className="ml-2">• {item.color}</span>
-                          </p>
-                          <p>
-                            Size <span className="ml-2">• {item.size}</span>
-                          </p>
+                          <p>Color <span className="ml-2">• {item.color}</span></p>
+                          <p>Size <span className="ml-2">• {item.size}</span></p>
                         </div>
                       </div>
                     </div>
-                    <div className="col-span-2 text-center">
-                      <p className="font-semibold">₹{item.price.toFixed(2)}</p>
-                    </div>
+                    <div className="col-span-2 text-center"><p className="font-semibold">₹{item.price.toFixed(2)}</p></div>
                     <div className="col-span-2 flex justify-center items-center gap-3">
-                      <button
-                        onClick={() => handleDecrease(item)}
-                        className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 ${disableDecrease ? "opacity-50 cursor-not-allowed" : ""
-                          }`}
-                        disabled={disableDecrease}
-                        aria-label={`Decrease quantity for ${item.name}`}
-                      >
-                        <Minus size={16} />
-                      </button>
+                      <button onClick={() => handleDecrease(item)} className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 ${disableDecrease ? "opacity-50 cursor-not-allowed" : ""}`} disabled={disableDecrease}><Minus size={16} /></button>
                       <span className="w-8 text-center font-medium">{item.quantity}</span>
-                      <button
-                        onClick={() => handleIncrease(item)}
-                        className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 ${itemLoading ? "opacity-70 cursor-wait" : ""
-                          }`}
-                        disabled={itemLoading}
-                        aria-label={`Increase quantity for ${item.name}`}
-                      >
-                        <Plus size={16} />
-                      </button>
+                      <button onClick={() => handleIncrease(item)} className={`w-8 h-8 rounded-full border border-gray-300 flex items-center justify-center hover:bg-gray-50 ${itemLoading ? "opacity-70 cursor-wait" : ""}`} disabled={itemLoading}><Plus size={16} /></button>
                     </div>
-                    <div className="col-span-2 text-center">
-                      <p className="font-bold text-yellow-500 text-lg">₹{(item.price * item.quantity).toFixed(2)}</p>
-                    </div>
+                    <div className="col-span-2 text-center"><p className="font-bold text-yellow-500 text-lg">₹{(item.price * item.quantity).toFixed(2)}</p></div>
                     <div className="col-span-1 flex justify-center">
-                      <button
-                        onClick={() => handleDelete(item)}
-                        className="w-10 h-10 rounded-full hover:bg-red-50 flex items-center justify-center text-red-500 hover:text-red-600 transition"
-                        title="Delete item"
-                        aria-label={`Delete ${item.name}`}
-                        disabled={itemLoading}
-                      >
-                        <Trash2 size={20} />
-                      </button>
+                      <button onClick={() => handleDelete(item)} className="w-10 h-10 rounded-full hover:bg-red-50 flex items-center justify-center text-red-500 hover:text-red-600 transition" disabled={itemLoading}><Trash2 size={20} /></button>
                     </div>
                   </div>
 
-                  {/* Mobile Layout - Stack Vertically */}
                   <div className="lg:hidden space-y-3">
                     <div className="flex gap-3">
                       <div className="flex-shrink-0 pt-1">
-                        <input
-                          type="checkbox"
-                          checked={!!item.selected}
-                          onChange={() => toggleItemSelection(item.id)}
-                          className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                        />
+                        <input type="checkbox" checked={!!item.selected} onChange={() => toggleItemSelection(item.id)} className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" />
                       </div>
                       <img src={item.image} alt={item.name} className="w-20 h-20 rounded-lg object-cover bg-gray-100 flex-shrink-0" />
                       <div className="flex-1 min-w-0">
@@ -806,42 +596,22 @@ const handleCheckout = async () => {
                           <p>Size: {item.size}</p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleDelete(item)}
-                        className="p-2 hover:bg-red-50 rounded-full text-red-500 hover:text-red-600 h-fit"
-                        disabled={itemLoading}
-                      >
-                        <Trash2 size={18} />
-                      </button>
+                      <button onClick={() => handleDelete(item)} className="p-2 hover:bg-red-50 rounded-full text-red-500 hover:text-red-600 h-fit" disabled={itemLoading}><Trash2 size={18} /></button>
                     </div>
 
                     <div className="flex justify-between items-center pl-8">
                       <div>
                         <p className="text-xs text-gray-600">Price</p>
-                        <p className="font-semibold">${item.price.toFixed(2)}</p>
+                        <p className="font-semibold">₹{item.price.toFixed(2)}</p>
                       </div>
                       <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => handleDecrease(item)}
-                          className={`w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center ${disableDecrease ? "opacity-50 cursor-not-allowed" : ""
-                            }`}
-                          disabled={disableDecrease}
-                        >
-                          <Minus size={14} />
-                        </button>
+                        <button onClick={() => handleDecrease(item)} className={`w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center ${disableDecrease ? "opacity-50 cursor-not-allowed" : ""}`} disabled={disableDecrease}><Minus size={14} /></button>
                         <span className="w-6 text-center font-medium text-sm">{item.quantity}</span>
-                        <button
-                          onClick={() => handleIncrease(item)}
-                          className={`w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center ${itemLoading ? "opacity-70 cursor-wait" : ""
-                            }`}
-                          disabled={itemLoading}
-                        >
-                          <Plus size={14} />
-                        </button>
+                        <button onClick={() => handleIncrease(item)} className={`w-7 h-7 rounded-full border border-gray-300 flex items-center justify-center ${itemLoading ? "opacity-70 cursor-wait" : ""}`} disabled={itemLoading}><Plus size={14} /></button>
                       </div>
                       <div>
                         <p className="text-xs text-gray-600">Total</p>
-                        <p className="font-bold text-yellow-500">${(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="font-bold text-yellow-500">₹{(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     </div>
                   </div>
@@ -857,7 +627,6 @@ const handleCheckout = async () => {
           </div>
         </div>
 
-        {/* Right Section - Checkout Details */}
         <div className="w-full lg:w-96">
           <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm mb-4 sm:mb-6">
             <h2 className="text-lg font-semibold mb-4">Delivery Address</h2>
@@ -866,20 +635,11 @@ const handleCheckout = async () => {
               <>
                 <div className="mb-4">
                   <label className="flex items-start p-4 border-2 border-blue-500 bg-blue-50 rounded-lg cursor-pointer">
-                    <input
-                      type="radio"
-                      checked={selectedAddress === "default"}
-                      onChange={() => onSelectAddress("default")}
-                      className="w-4 h-4 mt-0.5 text-blue-600 focus:ring-blue-500"
-                    />
+                    <input type="radio" checked={selectedAddress === "default"} onChange={() => onSelectAddress("default")} className="w-4 h-4 mt-0.5 text-blue-600 focus:ring-blue-500" />
                     <div className="ml-3 flex-1">
                       <p className="font-semibold text-sm">Default Address</p>
-                      <p className="text-xs text-gray-600 mt-1">
-                        {defaultAddress.doorNo}, {defaultAddress.address}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {defaultAddress.city}, {defaultAddress.landmark} - {defaultAddress.pincode}
-                      </p>
+                      <p className="text-xs text-gray-600 mt-1">{defaultAddress.doorNo}, {defaultAddress.address}</p>
+                      <p className="text-xs text-gray-600">{defaultAddress.city}, {defaultAddress.landmark} - {defaultAddress.pincode}</p>
                       <div className="mt-2 pt-2 border-t border-blue-200">
                         <p className="text-xs text-gray-500">Contact Number</p>
                         <p className="text-sm font-semibold text-gray-800">{defaultAddress.phone || addressForm.phone || "Not provided"}</p>
@@ -887,9 +647,7 @@ const handleCheckout = async () => {
                     </div>
                   </label>
                 </div>
-                <button onClick={onEditAddress} className="w-full bg-black text-white py-3 rounded-full font-medium hover:bg-gray-800 transition text-sm sm:text-base">
-                  Edit Address
-                </button>
+                <button onClick={onEditAddress} className="w-full bg-black text-white py-3 rounded-full font-medium hover:bg-gray-800 transition text-sm sm:text-base">Edit Address</button>
               </>
             ) : (
               <>
@@ -930,52 +688,23 @@ const handleCheckout = async () => {
           <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm mb-4 sm:mb-6">
             <h2 className="text-lg font-semibold mb-4">Payment Method</h2>
             <div className="space-y-3">
-              {/* 🟡 Online Payment - Disabled */}
-              <label
-                className="flex items-center p-4 border-2 rounded-lg cursor-not-allowed opacity-60 border-gray-300 bg-gray-50"
-              >
-                <input
-                  type="radio"
-                  name="payment"
-                  value="online"
-                  disabled
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-not-allowed"
-                />
+              <label className="flex items-center p-4 border-2 rounded-lg cursor-not-allowed opacity-60 border-gray-300 bg-gray-50">
+                <input type="radio" name="payment" value="online" disabled className="w-4 h-4 text-blue-600 focus:ring-blue-500 cursor-not-allowed" />
                 <div className="ml-3 flex-1">
                   <p className="font-semibold text-sm flex items-center gap-2">
                     Online Payment
-                    <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full">
-                      Coming Soon
-                    </span>
+                    <span className="text-xs text-yellow-600 bg-yellow-100 px-2 py-0.5 rounded-full">Coming Soon</span>
                   </p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Pay securely using Credit/Debit Card, UPI, Net Banking
-                  </p>
+                  <p className="text-xs text-gray-600 mt-1">Pay securely using Credit/Debit Card, UPI, Net Banking</p>
                 </div>
                 <div className="text-2xl">💳</div>
               </label>
 
-              {/* 🟢 Cash on Delivery - Active */}
-              <label
-                className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${
-                  paymentMethod === "cod"
-                    ? "border-blue-500 bg-blue-50"
-                    : "border-gray-300 hover:border-blue-300"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="payment"
-                  value="cod"
-                  checked={paymentMethod === "cod"}
-                  onChange={(e) => setPaymentMethod(e.target.value)}
-                  className="w-4 h-4 text-blue-600 focus:ring-blue-500"
-                />
+              <label className={`flex items-center p-4 border-2 rounded-lg cursor-pointer transition ${paymentMethod === "cod" ? "border-blue-500 bg-blue-50" : "border-gray-300 hover:border-blue-300"}`}>
+                <input type="radio" name="payment" value="cod" checked={paymentMethod === "cod"} onChange={(e) => setPaymentMethod(e.target.value)} className="w-4 h-4 text-blue-600 focus:ring-blue-500" />
                 <div className="ml-3 flex-1">
                   <p className="font-semibold text-sm">Cash on Delivery</p>
-                  <p className="text-xs text-gray-600 mt-1">
-                    Pay with cash when your order is delivered
-                  </p>
+                  <p className="text-xs text-gray-600 mt-1">Pay with cash when your order is delivered</p>
                 </div>
                 <div className="text-2xl">💵</div>
               </label>
@@ -1002,12 +731,8 @@ const handleCheckout = async () => {
                 <span className="font-bold text-lg sm:text-xl">₹{total.toFixed(2)}</span>
               </div>
             </div>
-            <button
-              onClick={handleCheckout}
-              disabled={selectedItems.length === 0 || checkoutLoading}
-              className="w-full bg-white text-black py-3 rounded-full font-semibold hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base"
-            >
-              {checkoutLoading ? "Processing..." : `Checkout (${selectedItems.length} ${selectedItems.length === 1 ? "item" : "items"}) — Pay ${total.toFixed(2)}`}
+            <button onClick={handleCheckout} disabled={selectedItems.length === 0 || checkoutLoading} className="w-full bg-white text-black py-3 rounded-full font-semibold hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed text-sm sm:text-base">
+              {checkoutLoading ? "Processing..." : `Checkout (${selectedItems.length} ${selectedItems.length === 1 ? "item" : "items"}) — Pay ₹${total.toFixed(2)}`}
             </button>
           </div>
         </div>
@@ -1018,7 +743,6 @@ const handleCheckout = async () => {
   return (
     <div className="min-h-screen bg-gray-100 pt-30 pb-10 px-5">
       <div className="max-w-7xl mx-auto">
-        {/* Step Tracker */}
         <div className="mb-8">
           <div className="flex items-center justify-center">
             {[
@@ -1032,7 +756,6 @@ const handleCheckout = async () => {
               return (
                 <div key={step.number} className="flex items-center">
                   <button onClick={() => setCurrentStep(step.number)} className="flex flex-col items-center relative group">
-                    {/* Animated pulse ring for active step */}
                     {isActive && (
                       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-12 sm:w-16 sm:h-16">
                         <div className="absolute inset-0 rounded-full bg-blue-400 animate-ping opacity-75"></div>
@@ -1061,7 +784,6 @@ const handleCheckout = async () => {
           </div>
         </div>
 
-        {/* Custom CSS for animations */}
         <style>{`
           @keyframes bounce-subtle {
             0%, 100% {
@@ -1095,38 +817,33 @@ const handleCheckout = async () => {
           }
         `}</style>
 
-        {/* Content Based on Step */}
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">{renderStepContent()}</div>
       </div>
 
-      {/* Success Popout / Modal */}
       {showSuccessPopout && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="absolute inset-0 bg-black opacity-40" onClick={dismissSuccessPopout}></div>
           <div className="relative max-w-md w-full bg-white rounded-xl shadow-xl p-6 mx-4">
             <h3 className="text-lg font-bold mb-2">{successPopoutMessage}</h3>
             <p className="text-sm text-gray-600 mb-4">
-              Thank you! Your order{createdOrdersForPopout.length > 1 ? "s have" : " has"} been placed. We will show your order ticket shortly.
+              Thank you! Your order has been placed. We will show your order details shortly.
             </p>
 
-            {/* show brief summary of created orders */}
-            <div className="space-y-2 max-h-40 overflow-auto mb-4">
-              {createdOrdersForPopout.map((o, i) => {
-                const idFromServer = o.orderResponse?.id ?? o.orderResponse?.order_id ?? `local-${i}`;
-                const displayAmount = o.total_amount ?? o.orderResponse?.total_amount ?? 0;
-                return (
-                  <div key={idFromServer} className="border rounded-md p-2 bg-gray-50">
-                    <div className="flex justify-between items-center">
-                      <div className="text-sm">
-                        <div className="font-medium">Order #{idFromServer}</div>
-                        <div className="text-xs text-gray-600">Qty: {o.quantity}</div>
-                      </div>
-                      <div className="text-sm font-semibold">${displayAmount.toFixed(2)}</div>
+            {createdOrdersForPopout.length > 0 && (
+              <div className="space-y-2 max-h-40 overflow-auto mb-4">
+                {createdOrdersForPopout.map((order, i) => (
+                  <div key={i} className="border rounded-md p-3 bg-gray-50">
+                    <div className="flex justify-between items-center mb-2">
+                      <div className="text-sm font-medium">Order #{order.order_id}</div>
+                      <div className="text-sm font-semibold">₹{order.total_amount?.toFixed(2)}</div>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {order.total_items} item{order.total_items > 1 ? 's' : ''} • {order.cart_items_removed} removed from cart
                     </div>
                   </div>
-                );
-              })}
-            </div>
+                ))}
+              </div>
+            )}
 
             <div className="flex gap-2">
               <button onClick={dismissSuccessPopout} className="flex-1 py-2 rounded-full bg-blue-600 text-white font-medium hover:bg-blue-700">
@@ -1134,7 +851,6 @@ const handleCheckout = async () => {
               </button>
               <button
                 onClick={() => {
-                  // simply close popout but keep on same page (auto will navigate after timeout)
                   if (successTimerId) {
                     clearTimeout(successTimerId);
                     setSuccessTimerId(null);

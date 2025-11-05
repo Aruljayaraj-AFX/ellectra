@@ -11,7 +11,6 @@ from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
 import uuid
-from sqlalchemy import func
 
 router_past_order = APIRouter()
 
@@ -32,12 +31,6 @@ class OrderStatusUpdate(BaseModel):
     
     class Config:
         from_attributes = True
-    
-    def __init__(self, **data):
-        super().__init__(**data)
-        if self.payment_status is None and self.status is None:
-            raise ValueError('At least one status field must be provided')
-
 
 # 🆔 Generate Unique Order ID
 async def generate_order_id(db: Session):
@@ -65,18 +58,33 @@ async def add_past_order(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # ✅ Check if product exists
-        product = db.query(product_table).filter(product_table.pro_id == order.pro_id).first()
-        if not product:
-            raise HTTPException(status_code=404, detail="Product not found")
+        # ✅ Validate all products and calculate total
+        total_amount = 0.0
+        items_data = []
 
-        # ✅ Create new past order
+        for item in order.items:
+            product = db.query(product_table).filter(product_table.pro_id == item.pro_id).first()
+            if not product:
+                raise HTTPException(status_code=404, detail=f"Product {item.pro_id} not found")
+            
+            price_per_item = float(product.price)
+            item_total = price_per_item * item.quantity
+            total_amount += item_total
+            
+            items_data.append({
+                "pro_id": item.pro_id,
+                "quantity": item.quantity,
+                "price_per_item": price_per_item,
+                "item_total": item_total
+            })
+
+        # ✅ Create new past order with items as JSON
+        order_id = await generate_order_id(db)
         new_order = past_order_table(
-            order_id=await generate_order_id(db),
+            order_id=order_id,
             user_id=user.user_id,
-            pro_id=order.pro_id,
-            quantity=order.quantity,
-            total_amount=order.total_amount,
+            items=items_data,  # Store as JSON
+            total_amount=total_amount,
             payment_status=order.payment_status or "Pending",
             delivery_address=order.delivery_address,
             city=order.city,
@@ -85,23 +93,27 @@ async def add_past_order(
             delivery_type=order.delivery_type or "Home Delivery",
             status="Pending",
         )
-
         db.add(new_order)
-        
-        # ✅ Delete the product from cart after order is placed
-        cart_item = db.query(cart_table).filter(
-            cart_table.user_id == user.user_id,
-            cart_table.pro_id == order.pro_id
-        ).first()
-        
-        if cart_item:
-            db.delete(cart_item)
+
+        # ✅ Delete products from cart after order is placed
+        removed_cart_items = 0
+        for item in items_data:
+            cart_item = db.query(cart_table).filter(
+                cart_table.user_id == user.user_id,
+                cart_table.pro_id == item["pro_id"]
+            ).first()
+            
+            if cart_item:
+                db.delete(cart_item)
+                removed_cart_items += 1
         
         db.commit()
         return {
             "message": "✅ Order placed successfully",
-            "order_id": new_order.order_id,
-            "cart_item_removed": bool(cart_item)
+            "order_id": order_id,
+            "total_items": len(items_data),
+            "total_amount": total_amount,
+            "cart_items_removed": removed_cart_items
         }
 
     except HTTPException:
@@ -127,11 +139,10 @@ async def view_past_orders(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # ✅ Get ALL orders joined with product details AND user details
+        # ✅ Get ALL orders
         orders = (
-            db.query(past_order_table, product_table, user_table)
-            .join(product_table, past_order_table.pro_id == product_table.pro_id)
-            .join(user_table, past_order_table.user_id == user_table.user_id)
+            db.query(past_order_table)
+            .filter(past_order_table.user_id == user.user_id)
             .order_by(past_order_table.order_date.desc())
             .all()
         )
@@ -139,30 +150,42 @@ async def view_past_orders(
         if not orders:
             return {"message": "No orders found"}
 
-        order_data = [
-            {
-                "order_id": o.past_order_table.order_id,
-                "product_id": o.product_table.pro_id,
-                "user_id": o.past_order_table.user_id,
-                "user_phoneno": o.user_table.user_number,
-                "user_email": o.user_table.user_email,
-                "user_name": o.user_table.user_name,
-                "product_name": o.product_table.product_name,
-                "product_img": o.product_table.product_Img,
-                "price_per_item": float(o.product_table.price),
-                "quantity": o.past_order_table.quantity,
-                "total_amount": o.past_order_table.total_amount,
-                "payment_status": o.past_order_table.payment_status,
-                "status": o.past_order_table.status,
-                "delivery_type": o.past_order_table.delivery_type,
-                "delivery_address": o.past_order_table.delivery_address,
-                "city": o.past_order_table.city,
-                "pincode": o.past_order_table.pincode,
-                "landmark": o.past_order_table.landmark,
-                "order_date": o.past_order_table.order_date,
-            }
-            for o in orders
-        ]
+        order_data = []
+        for order in orders:
+            # Enrich items with product details
+            enriched_items = []
+            for item in order.items:
+                product = db.query(product_table).filter(
+                    product_table.pro_id == item["pro_id"]
+                ).first()
+                
+                enriched_items.append({
+                    "pro_id": item["pro_id"],
+                    "product_name": product.product_name if product else "Unknown Product",
+                    "product_img": product.product_Img if product else None,
+                    "quantity": item["quantity"],
+                    "price_per_item": item["price_per_item"],
+                    "item_total": item["item_total"],
+                })
+
+            order_data.append({
+                "order_id": order.order_id,
+                "user_id": order.user_id,
+                "user_phoneno": user.user_number,
+                "user_email": user.user_email,
+                "user_name": user.user_name,
+                "items": enriched_items,
+                "total_items": len(enriched_items),
+                "total_amount": order.total_amount,
+                "payment_status": order.payment_status,
+                "status": order.status,
+                "delivery_type": order.delivery_type,
+                "delivery_address": order.delivery_address,
+                "city": order.city,
+                "pincode": order.pincode,
+                "landmark": order.landmark,
+                "order_date": order.order_date,
+            })
 
         return {"past_orders": order_data}
 
@@ -170,6 +193,73 @@ async def view_past_orders(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error viewing past orders: {str(e)}")
+
+
+# 📦 View single order details
+@router_past_order.get("/past_order/view/{order_id}")
+async def view_order_details(
+    order_id: str,
+    db: Session = Depends(get_DB),
+    token: object = Depends(user_Authorization())
+):
+    try:
+        user_email = token.get("email")
+        if not user_email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        user = db.query(user_table).filter(user_table.user_email == user_email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Get order
+        order = db.query(past_order_table).filter(
+            past_order_table.order_id == order_id,
+            past_order_table.user_id == user.user_id
+        ).first()
+
+        if not order:
+            raise HTTPException(status_code=404, detail="Order not found")
+
+        # Enrich items with product details
+        enriched_items = []
+        for item in order.items:
+            product = db.query(product_table).filter(
+                product_table.pro_id == item["pro_id"]
+            ).first()
+            
+            enriched_items.append({
+                "pro_id": item["pro_id"],
+                "product_name": product.product_name if product else "Unknown Product",
+                "product_img": product.product_Img if product else None,
+                "quantity": item["quantity"],
+                "price_per_item": item["price_per_item"],
+                "item_total": item["item_total"],
+            })
+
+        return {
+            "order_id": order.order_id,
+            "user_id": order.user_id,
+            "user_phoneno": user.user_number,
+            "user_email": user.user_email,
+            "user_name": user.user_name,
+            "items": enriched_items,
+            "total_items": len(enriched_items),
+            "total_amount": order.total_amount,
+            "payment_status": order.payment_status,
+            "status": order.status,
+            "delivery_type": order.delivery_type,
+            "delivery_address": order.delivery_address,
+            "city": order.city,
+            "pincode": order.pincode,
+            "landmark": order.landmark,
+            "order_date": order.order_date,
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error viewing order: {str(e)}")
+
     
 # 🔄 Update Payment Status and Order Status Only
 @router_past_order.patch("/past_order/update-status/{order_id}")
