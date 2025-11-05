@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import Index
 from database.DB import get_DB
 from models.order_table import past_order_table
 from models.product import product_table
@@ -8,9 +9,10 @@ from services.user import user_Authorization
 from schema.order_schema import PastOrderCreate, PastOrderUpdate
 from models.cart_table import cart_table
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 from enum import Enum
 import uuid
+from functools import lru_cache
 
 router_past_order = APIRouter()
 
@@ -36,9 +38,11 @@ class OrderStatusUpdate(BaseModel):
 async def generate_order_id(db: Session):
     """Generate a unique order ID like ORD123456"""
     while True:
-        existing_ids = {r[0] for r in db.query(past_order_table.order_id).all()}
         order_id = f"ORD{uuid.uuid4().hex[:6].upper()}"
-        if order_id not in existing_ids:
+        exists = db.query(past_order_table).filter(
+            past_order_table.order_id == order_id
+        ).first()
+        if not exists:
             return order_id
 
 
@@ -58,12 +62,21 @@ async def add_past_order(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
+        # ✅ Get all product IDs at once (batch query)
+        product_ids = [item.pro_id for item in order.items]
+        products = db.query(product_table).filter(
+            product_table.pro_id.in_(product_ids)
+        ).all()
+        
+        # Create product lookup dictionary
+        product_dict = {p.pro_id: p for p in products}
+        
         # ✅ Validate all products and calculate total
         total_amount = 0.0
         items_data = []
 
         for item in order.items:
-            product = db.query(product_table).filter(product_table.pro_id == item.pro_id).first()
+            product = product_dict.get(item.pro_id)
             if not product:
                 raise HTTPException(status_code=404, detail=f"Product {item.pro_id} not found")
             
@@ -83,7 +96,7 @@ async def add_past_order(
         new_order = past_order_table(
             order_id=order_id,
             user_id=user.user_id,
-            items=items_data,  # Store as JSON
+            items=items_data,
             total_amount=total_amount,
             payment_status=order.payment_status or "Pending",
             delivery_address=order.delivery_address,
@@ -95,17 +108,11 @@ async def add_past_order(
         )
         db.add(new_order)
 
-        # ✅ Delete products from cart after order is placed
-        removed_cart_items = 0
-        for item in items_data:
-            cart_item = db.query(cart_table).filter(
-                cart_table.user_id == user.user_id,
-                cart_table.pro_id == item["pro_id"]
-            ).first()
-            
-            if cart_item:
-                db.delete(cart_item)
-                removed_cart_items += 1
+        # ✅ Delete products from cart after order is placed (batch delete)
+        removed_cart_items = db.query(cart_table).filter(
+            cart_table.user_id == user.user_id,
+            cart_table.pro_id.in_(product_ids)
+        ).delete(synchronize_session=False)
         
         db.commit()
         return {
@@ -123,9 +130,12 @@ async def add_past_order(
         raise HTTPException(status_code=500, detail=f"Error placing order: {str(e)}")
 
 
-# 📦 View user's past orders (with product details)
+# 📦 View user's past orders with PAGINATION (Optimized)
 @router_past_order.get("/past_order/view")
 async def view_past_orders(
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    status: Optional[str] = Query(None, description="Filter by order status"),
     db: Session = Depends(get_DB),
     token: object = Depends(user_Authorization())
 ):
@@ -139,25 +149,59 @@ async def view_past_orders(
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # ✅ Get ALL orders
-        orders = (
-            db.query(past_order_table)
-            .filter(past_order_table.user_id == user.user_id)
-            .order_by(past_order_table.order_date.desc())
-            .all()
+        # ✅ Calculate offset for pagination
+        offset = (page - 1) * limit
+
+        # ✅ Build query with optional status filter
+        query = db.query(past_order_table).filter(
+            past_order_table.user_id == user.user_id
         )
+        
+        if status:
+            query = query.filter(past_order_table.status == status)
+        
+        # ✅ Get total count (for pagination info)
+        total_count = query.count()
+        
+        # ✅ Get paginated orders
+        orders = query.order_by(
+            past_order_table.order_date.desc()
+        ).offset(offset).limit(limit).all()
 
         if not orders:
-            return {"message": "No orders found"}
+            return {
+                "message": "No orders found",
+                "past_orders": [],
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total_items": 0,
+                    "total_pages": 0,
+                    "has_more": False
+                }
+            }
 
+        # ✅ Get all unique product IDs from all orders (batch query)
+        all_product_ids = set()
+        for order in orders:
+            for item in order.items:
+                all_product_ids.add(item["pro_id"])
+        
+        # ✅ Fetch all products in one query
+        products = db.query(product_table).filter(
+            product_table.pro_id.in_(all_product_ids)
+        ).all()
+        
+        # Create product lookup dictionary
+        product_dict = {p.pro_id: p for p in products}
+
+        # ✅ Build response data
         order_data = []
         for order in orders:
             # Enrich items with product details
             enriched_items = []
             for item in order.items:
-                product = db.query(product_table).filter(
-                    product_table.pro_id == item["pro_id"]
-                ).first()
+                product = product_dict.get(item["pro_id"])
                 
                 enriched_items.append({
                     "pro_id": item["pro_id"],
@@ -187,7 +231,20 @@ async def view_past_orders(
                 "order_date": order.order_date,
             })
 
-        return {"past_orders": order_data}
+        # ✅ Calculate pagination metadata
+        total_pages = (total_count + limit - 1) // limit
+        has_more = page < total_pages
+
+        return {
+            "past_orders": order_data,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_items": total_count,
+                "total_pages": total_pages,
+                "has_more": has_more
+            }
+        }
 
     except HTTPException:
         raise
@@ -195,7 +252,7 @@ async def view_past_orders(
         raise HTTPException(status_code=500, detail=f"Error viewing past orders: {str(e)}")
 
 
-# 📦 View single order details
+# 📦 View single order details (Optimized)
 @router_past_order.get("/past_order/view/{order_id}")
 async def view_order_details(
     order_id: str,
@@ -220,12 +277,19 @@ async def view_order_details(
         if not order:
             raise HTTPException(status_code=404, detail="Order not found")
 
+        # ✅ Get all product IDs and fetch in one query
+        product_ids = [item["pro_id"] for item in order.items]
+        products = db.query(product_table).filter(
+            product_table.pro_id.in_(product_ids)
+        ).all()
+        
+        # Create product lookup dictionary
+        product_dict = {p.pro_id: p for p in products}
+
         # Enrich items with product details
         enriched_items = []
         for item in order.items:
-            product = db.query(product_table).filter(
-                product_table.pro_id == item["pro_id"]
-            ).first()
+            product = product_dict.get(item["pro_id"])
             
             enriched_items.append({
                 "pro_id": item["pro_id"],
@@ -410,3 +474,49 @@ async def delete_past_order(
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Error deleting order: {str(e)}")
+
+
+# 📊 Get order statistics (Optional - for dashboard)
+@router_past_order.get("/past_order/stats")
+async def get_order_stats(
+    db: Session = Depends(get_DB),
+    token: object = Depends(user_Authorization())
+):
+    """Get order statistics for the user"""
+    try:
+        user_email = token.get("email")
+        if not user_email:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        user = db.query(user_table).filter(user_table.user_email == user_email).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        # Get counts by status
+        from sqlalchemy import func
+        
+        stats = db.query(
+            past_order_table.status,
+            func.count(past_order_table.order_id).label('count')
+        ).filter(
+            past_order_table.user_id == user.user_id
+        ).group_by(past_order_table.status).all()
+        
+        total_orders = db.query(func.count(past_order_table.order_id)).filter(
+            past_order_table.user_id == user.user_id
+        ).scalar()
+        
+        total_spent = db.query(func.sum(past_order_table.total_amount)).filter(
+            past_order_table.user_id == user.user_id
+        ).scalar() or 0
+
+        return {
+            "total_orders": total_orders,
+            "total_spent": float(total_spent),
+            "by_status": {stat.status: stat.count for stat in stats}
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
