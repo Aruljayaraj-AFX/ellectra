@@ -154,9 +154,7 @@ async def view_past_orders(
         offset = (page - 1) * limit
 
         # ✅ Build query with optional status filter - DON'T call .all() yet!
-        query = db.query(past_order_table).filter(
-            past_order_table.user_id == user.user_id
-        )
+        query = db.query(past_order_table).all()
         
         if status:
             query = query.filter(past_order_table.status == status)
