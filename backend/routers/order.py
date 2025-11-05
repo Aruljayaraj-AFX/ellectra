@@ -251,9 +251,12 @@ async def view_past_orders(
         raise HTTPException(status_code=500, detail=f"Error viewing past orders: {str(e)}")
 
 # 📦 View single order details (Optimized)
-@router_past_order.get("/past_order/view/{order_id}")
-async def view_order_details(
-    order_id: str,
+# 📦 View user's past orders with PAGINATION (Optimized)
+@router_past_order.get("/past_order/view")
+async def view_past_orders(
+    page: int = Query(1, ge=1, description="Page number"),
+    limit: int = Query(20, ge=1, le=100, description="Items per page"),
+    status: Optional[str] = Query(None, description="Filter by order status"),
     db: Session = Depends(get_DB),
     token: object = Depends(user_Authorization())
 ):
@@ -262,67 +265,124 @@ async def view_order_details(
         if not user_email:
             raise HTTPException(status_code=401, detail="Invalid token")
 
+        # ✅ Verify user is authenticated
         user = db.query(user_table).filter(user_table.user_email == user_email).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # Get order
-        order = db.query(past_order_table).filter(
-            past_order_table.order_id == order_id,
-            past_order_table.user_id == user.user_id
-        ).first()
+        # ✅ Calculate offset for pagination
+        offset = (page - 1) * limit
 
-        if not order:
-            raise HTTPException(status_code=404, detail="Order not found")
+        # ✅ Build query - Get ALL orders (no user filter)
+        query = db.query(past_order_table)
+        
+        if status:
+            query = query.filter(past_order_table.status == status)
+        
+        # ✅ Get total count (for pagination info)
+        total_count = query.count()
+        
+        # ✅ Get paginated orders
+        orders = query.order_by(
+            past_order_table.order_date.desc()
+        ).offset(offset).limit(limit).all()
 
-        # ✅ Get all product IDs and fetch in one query
-        product_ids = [item["pro_id"] for item in order.items]
+        if not orders:
+            return {
+                "message": "No orders found",
+                "past_orders": [],
+                "pagination": {
+                    "page": page,
+                    "limit": limit,
+                    "total_items": 0,
+                    "total_pages": 0,
+                    "has_more": False
+                }
+            }
+
+        # ✅ Get all unique product IDs from all orders (batch query)
+        all_product_ids = set()
+        for order in orders:
+            for item in order.items:
+                all_product_ids.add(item["pro_id"])
+        
+        # ✅ Fetch all products in one query
         products = db.query(product_table).filter(
-            product_table.pro_id.in_(product_ids)
+            product_table.pro_id.in_(all_product_ids)
         ).all()
         
         # Create product lookup dictionary
         product_dict = {p.pro_id: p for p in products}
 
-        # Enrich items with product details
-        enriched_items = []
-        for item in order.items:
-            product = product_dict.get(item["pro_id"])
+        # ✅ Get all unique user IDs to fetch user details
+        user_ids = set(order.user_id for order in orders)
+        users = db.query(user_table).filter(
+            user_table.user_id.in_(user_ids)
+        ).all()
+        
+        # Create user lookup dictionary
+        user_dict = {u.user_id: u for u in users}
+
+        # ✅ Build response data
+        order_data = []
+        for order in orders:
+            # Get user details for this order
+            order_user = user_dict.get(order.user_id)
             
-            enriched_items.append({
-                "pro_id": item["pro_id"],
-                "product_name": product.product_name if product else "Unknown Product",
-                "product_img": product.product_Img if product else None,
-                "quantity": item["quantity"],
-                "price_per_item": item["price_per_item"],
-                "item_total": item["item_total"],
+            # Enrich items with product details
+            enriched_items = []
+            for item in order.items:
+                product = product_dict.get(item["pro_id"])
+                
+                enriched_items.append({
+                    "pro_id": item["pro_id"],
+                    "product_name": product.product_name if product else "Unknown Product",
+                    "product_img": product.product_Img if product else None,
+                    "quantity": item["quantity"],
+                    "price_per_item": item["price_per_item"],
+                    "item_total": item["item_total"],
+                })
+
+            order_data.append({
+                "order_id": order.order_id,
+                "user_id": order.user_id,
+                "user_phoneno": order_user.user_number if order_user else None,
+                "user_email": order_user.user_email if order_user else None,
+                "user_name": order_user.user_name if order_user else "Unknown User",
+                "items": enriched_items,
+                "total_items": len(enriched_items),
+                "total_amount": order.total_amount,
+                "payment_status": order.payment_status,
+                "status": order.status,
+                "delivery_type": order.delivery_type,
+                "delivery_address": order.delivery_address,
+                "city": order.city,
+                "pincode": order.pincode,
+                "landmark": order.landmark,
+                "order_date": order.order_date,
             })
 
+        # ✅ Calculate pagination metadata
+        total_pages = (total_count + limit - 1) // limit
+        has_more = page < total_pages
+
         return {
-            "order_id": order.order_id,
-            "user_id": order.user_id,
-            "user_phoneno": user.user_number,
-            "user_email": user.user_email,
-            "user_name": user.user_name,
-            "items": enriched_items,
-            "total_items": len(enriched_items),
-            "total_amount": order.total_amount,
-            "payment_status": order.payment_status,
-            "status": order.status,
-            "delivery_type": order.delivery_type,
-            "delivery_address": order.delivery_address,
-            "city": order.city,
-            "pincode": order.pincode,
-            "landmark": order.landmark,
-            "order_date": order.order_date,
+            "past_orders": order_data,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total_items": total_count,
+                "total_pages": total_pages,
+                "has_more": has_more
+            }
         }
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error viewing order: {str(e)}")
-
+        raise HTTPException(status_code=500, detail=f"Error viewing past orders: {str(e)}")
     
+        
 # 🔄 Update Payment Status and Order Status Only
 @router_past_order.patch("/past_order/update-status/{order_id}")
 async def update_order_status(
