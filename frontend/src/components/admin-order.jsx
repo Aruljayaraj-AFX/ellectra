@@ -245,7 +245,7 @@ const OrderManagementSystem = () => {
 
   if (view === 'details' && selectedOrder) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-30 py-8 px-4 sm:px-6 lg:px-8">
         {successMessage && (
           <Alert type="success" message={successMessage} onClose={() => setSuccessMessage(null)} />
         )}
@@ -520,7 +520,7 @@ const OrderManagementSystem = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 pt-30 py-8 px-4 sm:px-6 lg:px-8">
       {successMessage && (
         <Alert type="success" message={successMessage} onClose={() => setSuccessMessage(null)} />
       )}
@@ -633,26 +633,6 @@ const OrderManagementSystem = () => {
                           <p className="text-2xl font-bold text-indigo-600">{formatCurrency(order.total_amount)}</p>
                         </div>
                         <ChevronRight className="w-6 h-6 text-gray-400" />
-                      </div>
-                    </div>
-
-                    <div className="mt-4 pt-4 border-t border-gray-100">
-                      <div className="flex gap-2 overflow-x-auto pb-2">
-                        {order.items.slice(0, 4).map((item, idx) => (
-                          <div key={idx} className="relative group">
-                            <img
-                              src={item.product_img}
-                              alt={item.product_name}
-                              className="w-16 h-16 object-cover rounded-lg shadow-sm group-hover:shadow-md transition-shadow"
-                            />
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-10 rounded-lg transition-all"></div>
-                          </div>
-                        ))}
-                        {order.items.length > 4 && (
-                          <div className="w-16 h-16 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg flex items-center justify-center text-indigo-600 text-sm font-bold shadow-sm">
-                            +{order.items.length - 4}
-                          </div>
-                        )}
                       </div>
                     </div>
                   </div>
