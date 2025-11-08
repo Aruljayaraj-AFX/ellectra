@@ -11,7 +11,6 @@ import random
 
 router_cart = APIRouter()
 
-# 🆔 Generate Unique Cart ID
 async def generate_idno_cart(db: Session):
     """Generate a unique cart ID like CART123456"""
     while True:
@@ -24,7 +23,6 @@ async def generate_idno_cart(db: Session):
             return cart_id
 
 
-# 🛒 Add product to cart
 @router_cart.post("/cart/add")
 async def add_to_cart(
     cart_item: CartCreate,
@@ -32,25 +30,21 @@ async def add_to_cart(
     token: object = Depends(user_Authorization())
 ):
     try:
-        # ✅ Validate token
         user_email = token.get("email")
         if not user_email:
             raise HTTPException(status_code=401, detail="Invalid token, email missing")
 
-        # ✅ Fetch user info
         user = db.query(user_table).filter(user_table.user_email == user_email).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         user_id = user.user_id
 
-        # ✅ Fetch product info
         product = db.query(product_table).filter(product_table.pro_id == cart_item.pro_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
 
         price = float(product.price)
 
-        # ✅ Check if product already exists in user's cart
         existing_item = db.query(cart_table).filter(
             cart_table.user_id == user_id,
             cart_table.pro_id == cart_item.pro_id
@@ -80,7 +74,6 @@ async def add_to_cart(
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-# 📦 View user cart (with product details)
 @router_cart.get("/cart/view")
 async def view_cart(db: Session = Depends(get_DB), token: object = Depends(user_Authorization())):
     try:
@@ -88,14 +81,12 @@ async def view_cart(db: Session = Depends(get_DB), token: object = Depends(user_
         if not user_email:
             raise HTTPException(status_code=401, detail="Invalid token")
 
-        # ✅ Get user_id
         user = db.query(user_table).filter(user_table.user_email == user_email).first()
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
 
         user_id = user.user_id
 
-        # ✅ Get cart items + product info
         cart_items = (
             db.query(cart_table, product_table)
             .join(product_table, cart_table.pro_id == product_table.pro_id)
@@ -106,7 +97,6 @@ async def view_cart(db: Session = Depends(get_DB), token: object = Depends(user_
         if not cart_items:
             return {"message": "Your cart is empty"}
 
-        # ✅ Format output
         cart_data = [
             {
                 "cart_id": c.cart_table.cart_id,
@@ -128,7 +118,6 @@ async def view_cart(db: Session = Depends(get_DB), token: object = Depends(user_
         raise HTTPException(status_code=500, detail=f"Error viewing cart: {str(e)}")
 
 
-# ✏️ Update cart item quantity
 @router_cart.put("/cart/update/{cart_id}")
 async def update_cart(
     cart_id: str,
@@ -150,7 +139,6 @@ async def update_cart(
         if not item:
             raise HTTPException(status_code=404, detail="Cart item not found")
 
-        # ✅ Recalculate total price using product price
         product = db.query(product_table).filter(product_table.pro_id == item.pro_id).first()
         if not product:
             raise HTTPException(status_code=404, detail="Product not found")
@@ -168,7 +156,6 @@ async def update_cart(
         raise HTTPException(status_code=500, detail=f"Error updating cart: {str(e)}")
 
 
-# ❌ Delete cart item
 @router_cart.delete("/cart/delete/{cart_id}")
 async def delete_cart_item(
     cart_id: str,

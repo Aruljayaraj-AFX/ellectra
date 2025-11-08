@@ -132,12 +132,9 @@ export default function CategoryCRUD() {
     formDataToSend.append('cat_id', String(editingCategory.category_id));
     formDataToSend.append('catgories_name', formData.name.trim());
     
-    // Always send image - either new one or fetch and send existing one
     if (formData.image) {
-      // New image selected by user
       formDataToSend.append('catgories_img', formData.image);
     } else if (editingCategory.category_Img) {
-      // No new image, fetch existing image and send it
       try {
         const imageResponse = await fetch(editingCategory.category_Img);
         const imageBlob = await imageResponse.blob();

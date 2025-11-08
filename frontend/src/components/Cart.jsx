@@ -400,7 +400,6 @@ export default function Cart() {
     }
   };
 
-  // 🔥 NEW: Single API call for multiple items
   const handleCheckout = async () => {
     if (selectedItems.length === 0) return;
     const token = getToken();
@@ -428,13 +427,11 @@ export default function Cart() {
     setError(null);
 
     try {
-      // 🔥 Build items array for the new API
       const orderItems = selectedItems.map(item => ({
         pro_id: item.pro_id ?? item.id ?? String(item.name),
         quantity: item.quantity
       }));
 
-      // 🔥 Single API call with multiple items
       const payload = {
         items: orderItems,
         delivery_address: selectedAddress === "default"
@@ -464,10 +461,8 @@ export default function Cart() {
 
       const data = await resp.json();
 
-      // Remove selected items from cart
       setItems((prev) => prev.filter((it) => !it.selected));
 
-      // Store order data
       const orderData = {
         order_id: data.order_id,
         total_items: data.total_items,
@@ -483,11 +478,9 @@ export default function Cart() {
       setCreatedOrdersForPopout([orderData]);
       setPastOrders((prev) => [orderData, ...prev]);
 
-      // Show success message
       setSuccessPopoutMessage("Order placed successfully — Festival!");
       setShowSuccessPopout(true);
 
-      // Auto-navigate after 20 seconds
       const timer = setTimeout(() => {
         setShowSuccessPopout(false);
         setCurrentStep(3);

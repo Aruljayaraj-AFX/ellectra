@@ -4,11 +4,9 @@ export default function VisitTracker() {
   const [visits, setVisits] = useState(0);
 
   useEffect(() => {
-    // Get visit count from localStorage
     const storedVisits = localStorage.getItem("visitCount");
     const newCount = storedVisits ? parseInt(storedVisits) + 1 : 1;
 
-    // Update localStorage
     localStorage.setItem("visitCount", newCount);
     setVisits(newCount);
   }, []);

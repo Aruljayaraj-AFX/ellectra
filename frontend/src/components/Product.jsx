@@ -94,7 +94,6 @@ export default function Product() {
 
   return (
     <div className="min-h-screen bg-gray-200">
-      {/* Header */}
       <div className="flex flex-col lg:flex-row md:flex-row lg:justify-between md:justify-between">
         <div className="flex lg:pt-30 md:pt-27 pt-20 px-4 md:px-20 lg:px-40">
           <h1 className="lg:text-4xl md:text-4xl text-2xl font-semibold">
@@ -102,7 +101,6 @@ export default function Product() {
           </h1>
         </div>
 
-        {/* Search Bar */}
         <div className="flex pt-5 lg:pt-27 md:pt-25 -ml-5 md:px-20 lg:px-40">
           <div className="max-w-xs mx-auto mb-8">
             <div className="relative">
@@ -125,7 +123,6 @@ export default function Product() {
         </div>
       </div>
 
-      {/* Cart feedback message */}
       {cartMsg && (
         <div
           className={`text-center py-3 font-semibold ${
@@ -138,7 +135,6 @@ export default function Product() {
         </div>
       )}
 
-      {/* Product List */}
       <div className="px-4 md:px-20 lg:px-40 pb-20">
         {loading ? (
           <div className="text-center py-20 text-gray-600 text-xl font-medium">
@@ -151,7 +147,6 @@ export default function Product() {
                 key={product.product_id}
                 className="flex flex-col items-center w-full h-[420px] md:h-[460px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden"
               >
-                {/* Product Image */}
                 <div className="w-full h-[65%] bg-gray-100 flex items-center justify-center overflow-hidden">
                   {product.product_img ? (
                     <img
@@ -165,7 +160,6 @@ export default function Product() {
                   )}
                 </div>
 
-                {/* Product Info */}
                 <div className="flex flex-col flex-grow px-4 w-full justify-between py-3">
                   <h1 className="font-semibold text-lg md:text-2xl truncate">
                     {product.product_name}

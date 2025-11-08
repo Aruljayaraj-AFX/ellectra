@@ -24,7 +24,6 @@ export default function Profile() {
 
   const safe = (val) => (val === null || val === 'null' ? '' : val);
 
-  // 🟦 Fetch user details
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
@@ -73,7 +72,6 @@ export default function Profile() {
     setValidationErrors({ ...validationErrors, [field]: '' });
   };
 
-  // 🟧 Validation
   const validateInputs = () => {
     const errors = {};
 
@@ -90,7 +88,6 @@ export default function Profile() {
     return Object.keys(errors).length === 0;
   };
 
-  // 🟢 Save Changes
   const handleSave = async () => {
     if (!validateInputs()) return;
 
@@ -147,7 +144,6 @@ export default function Profile() {
     setValidationErrors({});
   };
 
-  // 🟡 Loading UI
   if (isLoading)
     return (
       <div className="min-h-screen flex items-center justify-center text-lg text-gray-600">
@@ -155,7 +151,6 @@ export default function Profile() {
       </div>
     );
 
-  // 🔴 Error UI
   if (error && !isEditing)
     return (
       <div className="min-h-screen flex flex-col items-center justify-center text-red-500 text-lg text-center">
@@ -170,11 +165,9 @@ export default function Profile() {
       </div>
     );
 
-  // 🟩 MAIN UI
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 py-12 px-4">
       <div className="max-w-4xl mx-auto mt-10">
-        {/* Header */}
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
           <div className="bg-gradient-to-r from-[#22BDF5] to-blue-500 h-32"></div>
           <div className="px-8 pb-8">
@@ -196,21 +189,18 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Success */}
         {successMsg && (
           <div className="bg-green-100 text-green-800 border border-green-400 px-4 py-2 rounded mb-4 text-center font-semibold">
             {successMsg}
           </div>
         )}
 
-        {/* Error message during edit */}
         {error && isEditing && (
           <div className="bg-red-100 text-red-800 border border-red-400 px-4 py-2 rounded mb-4 text-center font-semibold">
             ❌ {error}
           </div>
         )}
 
-        {/* Form */}
         <div className="bg-white rounded-2xl shadow-xl p-8">
           <h2 className="text-2xl font-bold text-gray-800 mb-6">Personal Information</h2>
 

@@ -10,14 +10,12 @@ export default function Navbar() {
 
   const BASE_URL = "https://ellectra-beta.vercel.app/ellectra/v1";
 
-  // 🧠 Check token on mount
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) setLogin(true);
     else setLogin(false);
   }, []);
 
-  // 🛒 Fetch Cart Count (continuous check)
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (!token) return;
@@ -46,15 +44,12 @@ export default function Navbar() {
       }
     };
 
-    // Initial call
     fetchCart();
 
-    // 🔁 Refresh every 15 seconds
     const interval = setInterval(fetchCart, 30000);
     return () => clearInterval(interval);
   }, [login]);
 
-  // 🔐 Google login handler
   const handleGoogleLogin = async () => {
     try {
       setLogin(true);
@@ -68,7 +63,6 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 left-0 w-full z-50">
       <div className="relative z-10 flex items-center justify-between px-4 sm:px-6 lg:px-8 xl:px-12 lg:py-5 bg-white/10 backdrop-blur-md">
-        {/* Logo */}
         <div className="flex items-center gap-2">
           <img
             src="https://res.cloudinary.com/dosahgtni/image/upload/v1762153393/Ellectra_w01wap.png"
@@ -77,7 +71,6 @@ export default function Navbar() {
           />
         </div>
 
-        {/* Desktop Menu */}
         <div className="hidden lg:flex items-center gap-6 xl:gap-8">
           <Link to="/" className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold">
             Home
@@ -86,7 +79,6 @@ export default function Navbar() {
             Shop
           </Link>
 
-          {/* 🛒 Cart with Notification Badge */}
           <Link
             to="/Cart"
             className="relative hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold"
@@ -124,7 +116,6 @@ export default function Navbar() {
           )}
         </div>
 
-        {/* Mobile Menu Button */}
         <div className="lg:hidden flex items-center py-3 gap-3">
           <button
             className="p-2 text-blue-400"
@@ -147,7 +138,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Dropdown */}
       {isMobileMenuOpen && (
         <div className="lg:hidden absolute top-full left-0 w-full shadow-lg z-50 bg-black/20 backdrop-blur-md">
           <div className="relative z-10 px-4 py-4 space-y-4">
@@ -171,7 +161,6 @@ export default function Navbar() {
                 </Link>
               </li>
 
-              {/* Cart with Badge */}
               <li>
                 <Link
             to="/Cart"

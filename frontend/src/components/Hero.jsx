@@ -8,6 +8,13 @@ export default function Hero() {
   const [showCursor, setShowCursor] = useState(false);
   const { securityStatus } = useContext(ClientContext);
   const [login, setLogin] = useState(false);
+  const [message, setMessage] = useState("");
+  const phoneNumber = "916381733447"; 
+  const sendToWhatsApp = () => {
+    const encodedMessage = encodeURIComponent(message);
+    const url = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    window.open(url, "_blank");
+  };
   useEffect(() => {
     window.scrollTo(0, 0);
     console.log(securityStatus);
@@ -36,7 +43,6 @@ export default function Hero() {
 
   return (
     <section className="min-h-screen text-center flex items-center px-4 bg-[#12161D] sm:px-6 lg:px-8 relative z-10 overflow-hidden">
-      {/* PCB Background Animation */}
       <div className="absolute inset-0 opacity-20">
         <svg className="w-full h-full" xmlns="http://www.w3.org/2000/svg">
           <defs>
@@ -53,7 +59,6 @@ export default function Hero() {
           </defs>
           <rect width="100%" height="100%" fill="url(#pcb-grid)"/>
           
-          {/* Circuit traces */}
           <g className="animate-pulse" style={{animationDuration: '3s'}}>
             <line x1="10%" y1="20%" x2="40%" y2="20%" stroke="#22BDF5" strokeWidth="2" opacity="0.6"/>
             <circle cx="10%" cy="20%" r="4" fill="#22BDF5" filter="url(#glow)"/>
@@ -86,7 +91,6 @@ export default function Hero() {
             <circle cx="55%" cy="50%" r="4" fill="#22BDF5" filter="url(#glow)"/>
           </g>
           
-          {/* Component shapes */}
           <g className="animate-pulse" style={{animationDuration: '5s'}}>
             <rect x="35%" y="60%" width="30" height="20" fill="none" stroke="#22BDF5" strokeWidth="1.5" opacity="0.5"/>
             <line x1="36%" y1="65%" x2="39%" y2="65%" stroke="#22BDF5" strokeWidth="1" opacity="0.5"/>
@@ -142,7 +146,27 @@ export default function Hero() {
         >
           Your one-stop shop for quality electronic parts and modules.
         </p>
-        
+        <div 
+          className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8 transition-all duration-1000 ease-out delay-300 ${
+            isLoaded 
+              ? 'transform translate-y-0 opacity-100 scale-100' 
+              : 'transform translate-y-8 opacity-0 scale-105'
+          }`}
+        >
+          <input
+            type="text"
+            placeholder="Type your message..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="border border-gray-300 text-white rounded-md p-2 w-64 focus:outline-none focus:ring-2 focus:ring-[#22BDF5]"
+          />
+          <button
+            onClick={sendToWhatsApp}
+            className="bg-[#22BDF5] hover:bg-[#22BDF5] text-black font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300"
+          >
+            Send via WhatsApp
+          </button>
+        </div>
         <div 
           className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8 transition-all duration-1000 ease-out delay-300 ${
             isLoaded 
@@ -162,7 +186,6 @@ export default function Hero() {
           }
         </div>
       </div>
-
       
     </section>
   );
