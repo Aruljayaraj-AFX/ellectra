@@ -6,6 +6,13 @@ export default function Shop() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
+  const [message, setMessage] = useState("");
+  const phoneNumber = "916381733447"; 
+  const sendToWhatsApp = () => {
+    const encodedMessage = encodeURIComponent(message);
+    const url = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+    window.open(url, "_blank");
+  };
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   useEffect(() => {
@@ -77,6 +84,23 @@ export default function Shop() {
           </div>
         </div>
       </div>
+      <div 
+          className={`flex flex-col sm:flex-row items-center px-4 md:px-20 lg:px-40 gap-1 sm:gap-2 mb-6 sm:mb-8  transition-all duration-1000 ease-out delay-300`}
+        >
+          <input
+            type="text"
+            placeholder="Type New Component ..."
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="border border-gray-300 text-black rounded-md p-2 w-64 focus:outline-none focus:ring-2 focus:ring-bg-gray-300"
+          />
+          <button
+            onClick={sendToWhatsApp}
+            className="bg-gray-300 hover:bg-green-300 text-black font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300"
+          >
+            Request for Component
+          </button>
+        </div>
 
       <div className="px-4 md:px-20 lg:px-40 pb-20">
         {loading ? (

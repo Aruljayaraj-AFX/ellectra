@@ -8,13 +8,6 @@ export default function Hero() {
   const [showCursor, setShowCursor] = useState(false);
   const { securityStatus } = useContext(ClientContext);
   const [login, setLogin] = useState(false);
-  const [message, setMessage] = useState("");
-  const phoneNumber = "916381733447"; 
-  const sendToWhatsApp = () => {
-    const encodedMessage = encodeURIComponent(message);
-    const url = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
-    window.open(url, "_blank");
-  };
   useEffect(() => {
     window.scrollTo(0, 0);
     console.log(securityStatus);
@@ -146,27 +139,6 @@ export default function Hero() {
         >
           Your one-stop shop for quality electronic parts and modules.
         </p>
-        <div 
-          className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8 transition-all duration-1000 ease-out delay-300 ${
-            isLoaded 
-              ? 'transform translate-y-0 opacity-100 scale-100' 
-              : 'transform translate-y-8 opacity-0 scale-105'
-          }`}
-        >
-          <input
-            type="text"
-            placeholder="Type your message..."
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            className="border border-gray-300 text-white rounded-md p-2 w-64 focus:outline-none focus:ring-2 focus:ring-[#22BDF5]"
-          />
-          <button
-            onClick={sendToWhatsApp}
-            className="bg-[#22BDF5] hover:bg-[#22BDF5] text-black font-semibold py-2 px-4 rounded-md shadow-md transition-all duration-300"
-          >
-            Send via WhatsApp
-          </button>
-        </div>
         <div 
           className={`flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 mb-6 sm:mb-8 transition-all duration-1000 ease-out delay-300 ${
             isLoaded 
