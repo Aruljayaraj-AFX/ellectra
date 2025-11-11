@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import arrow from "../assets/innerarrow.png";
 
 export default function Order() {
-  const BASE_URL = "http://ellectra-beta.vercel.app/ellectra/v1";
+  const BASE_URL = "https://ellectra-beta.vercel.app/ellectra/v1";
   const token = localStorage.getItem("token");
   const limit = 10;
   const [orders, setOrders] = useState([]);
