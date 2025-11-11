@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import arrow from "../assets/innerarrow.png";
 
 export default function Order() {
-  const BASE_URL = "http://localhost:8001/ellectra/v1";
+  const BASE_URL = "http://ellectra-beta.vercel.app/ellectra/v1";
   const token = localStorage.getItem("token");
   const limit = 10;
   const [orders, setOrders] = useState([]);
@@ -200,7 +200,7 @@ export default function Order() {
           onChange={(e) => setpay(e.target.value)}
           className="border border-gray-300 rounded-lg p-2 text-gray-700"
         >
-          <option value="" disabled>
+          <option value={selectedOrder.payment_status} disabled>
             Select Payment Status
           </option>
           <option value="Successfully Delivered">Successfully</option>
@@ -213,7 +213,7 @@ export default function Order() {
           onChange={(e) => setdel(e.target.value)}
           className="border border-gray-300 rounded-lg p-2 text-gray-700"
         >
-          <option value="" disabled>
+          <option value={selectedOrder.status} disabled>
             Select Delivery Status
           </option>
           <option value="Out for Delivery">Out for Delivery</option>
