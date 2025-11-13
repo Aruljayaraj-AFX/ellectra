@@ -309,7 +309,7 @@ const Pagination = memo(({ currentPage, totalPages, onPageChange }) => (
 // Main Component
 export default function ProductList() {
   // Base endpoints (keep consistent)
-  const BASE_API = "http://ellectra-beta.vercel.app/ellectra/v1";
+  const BASE_API = "https://ellectra-beta.vercel.app/ellectra/v1";
   const BASE_PRODUCTS = `${BASE_API}/products`;
   const PHONE_NUMBER = "916381733447";
 
