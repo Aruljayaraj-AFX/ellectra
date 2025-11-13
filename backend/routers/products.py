@@ -1,9 +1,9 @@
-from fastapi import APIRouter, HTTPException, Request,Depends,Query
+from fastapi import APIRouter, HTTPException, Request,Depends,Query,status
 from authlib.integrations.starlette_client import OAuth
 from models.user import user_table
 from database.DB import get_DB
 from dotenv import load_dotenv
-from services.product import get_pro_detail,get_cat_pag,get_cat_detail,all_cat
+from services.product import get_pro_detail,get_cat_pag,get_cat_detail,all_cat,get_pro_pag,get_pro_detail_paginated,search_products
 
 router_product=APIRouter()
 
@@ -22,3 +22,40 @@ async def get_cat_handle(catgories_id:str,db=Depends(get_DB)):
 @router_product.get("all_cart")
 async def get_all_cat_name(db=Depends(get_DB)):
     return await all_cat(db)
+
+@router_product.get("/total-pages")
+async def product_total_pages(db = Depends(get_DB)):
+    try:
+        return await get_pro_pag(db)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {repr(e)}"
+        )
+
+
+@router_product.get("/view")
+async def view_products(page: int = 1, db = Depends(get_DB)):
+    try:
+        return await get_pro_detail_paginated(page, db)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {repr(e)}"
+        )
+    
+@router_product.get("/search")
+async def search_product(query: str, db = Depends(get_DB)):
+    try:
+        return await search_products(query, db)
+    except HTTPException as e:
+        raise e
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected error: {repr(e)}"
+        )

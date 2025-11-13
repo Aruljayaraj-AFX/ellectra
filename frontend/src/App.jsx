@@ -12,6 +12,7 @@ import Cartoper from "./components/cartcrud";
 import Proadmin from "./components/product-admin";
 import VisitingCard from "./components/visitingcard";
 import Orderadmin from "./components/admin-order";
+import ShopNow from "./components/shopNow";
 
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/admin-catogeries" element={<Cartoper />} />
           <Route path="/admin-pro" element={<Proadmin />} />
           <Route path="/admin-order" element={<Orderadmin />} />
+          <Route path="/shop-now" element={<ShopNow/>}/>
         </Route>
         <Route
           path="/welcome-dude/visting-via/qr-code"

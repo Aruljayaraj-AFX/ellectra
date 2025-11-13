@@ -75,7 +75,7 @@ export default function Navbar() {
           <Link to="/" className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold">
             Home
           </Link>
-          <Link to="/Shop" className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold">
+          <Link to="/shop-now" className="hover:text-gray-500 transition-colors py-2 text-[#22BDF5] font-semibold">
             Shop
           </Link>
 
