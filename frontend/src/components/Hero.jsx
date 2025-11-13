@@ -146,7 +146,7 @@ export default function Hero() {
               : 'transform translate-y-8 opacity-0 scale-105'
           }`}
         >
-          <Link to="/Shop" className="px-6 lg:px-6 py-3 bg-[#22BDF5] font-bold text-black border-2 rounded-full text-base sm:text-lg shadow-[4px_4px_0px_black] hover:translate-x-1 hover:translate-y-1 hover:shadow-[1px_1px_0px_black] transition-all duration-100">
+          <Link to="/shop-now" className="px-6 lg:px-6 py-3 bg-[#22BDF5] font-bold text-black border-2 rounded-full text-base sm:text-lg shadow-[4px_4px_0px_black] hover:translate-x-1 hover:translate-y-1 hover:shadow-[1px_1px_0px_black] transition-all duration-100">
             Shop Now
           </Link>
           {securityStatus === 1 &&<button 
