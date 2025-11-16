@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, Search } from 'lucide-react';
+import { ArrowRight, Search, ShoppingCart, Loader2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function Shop() {
   const [searchQuery, setSearchQuery] = useState('');
   const [categories, setCategories] = useState([]);
   const [page, setPage] = useState(1);
+  const [products, setProducts] = useState([]);
   const [message, setMessage] = useState("");
+  const [addingToCart, setAddingToCart] = useState(null);
   const phoneNumber = "916381733447"; 
 
   const sendToWhatsApp = () => {
@@ -63,14 +65,65 @@ export default function Shop() {
             headers: { accept: 'application/json' },
           }
         );
-        const data = await res.json();
-        console.log(data);
-      }
+        const productData = await res.json();
+        if (productData && productData.data) {
+          setProducts(productData.data);
+          console.log(products);
+        } else {
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setProducts([]);
+      } 
       finally {
         setLoading(false);
       }
-    }
+    };
+    fetchsearchdata();
   },[searchQuery]);
+
+  const handleAddToCart = async (productId) => {
+    try {
+      setCartMsg("");
+      setAddingToCart(productId);
+      
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setCartMsg("Please log in to add items to your cart.");
+        setAddingToCart(null);
+        return;
+      }
+
+      const res = await fetch("https://ellectra-beta.vercel.app/ellectra/v1/cart/add", {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          pro_id: productId,
+          quantity: 1,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to add to cart");
+      }
+
+      setCartMsg("✅ Added to cart successfully!");
+      setTimeout(() => setCartMsg(""), 3000);
+    } catch (err) {
+      console.error("Add to cart error:", err);
+      setCartMsg(`${err.message || "Failed to add to cart"}`);
+      setTimeout(() => setCartMsg(""), 4000);
+    } finally {
+      setAddingToCart(null);
+    }
+  };
 
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -127,7 +180,7 @@ export default function Shop() {
           <div className="text-center py-20 text-gray-600 text-xl font-medium">
             Loading...
           </div>
-        ) : categories.length > 0 ? (
+        ) : categories.length > 0 && searchQuery === '' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {categories.map((cat) => (
               <div
@@ -162,12 +215,73 @@ export default function Shop() {
               </div>
             ))}
           </div>
-        ) : (
+        ) : searchQuery != '' ?(
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            {products.map((product)=>(
+              <div
+                key={product.product_id}
+                className="flex flex-col items-center w-full h-[420px] md:h-[460px] bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow overflow-hidden"
+              >
+                <div className="w-full h-[65%] bg-gray-100 flex items-center justify-center overflow-hidden">
+                  {product.product_img ? (
+                    <img
+                      src={product.product_img}
+                      alt={product.product_name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => (e.target.src = "/placeholder.png")}
+                    />
+                  ) : (
+                    <span className="text-gray-500 italic">No Image</span>
+                  )}
+                </div>
+
+                <div className="flex flex-col flex-grow px-4 w-full justify-between py-3">
+                  <h1 className="font-semibold text-lg md:text-2xl truncate">
+                    {product.product_name}
+                  </h1>
+                  <p className="text-gray-400 text-sm">
+                    Category: {product.category_id}
+                  </p>
+                  <p className="text-gray-600 text-sm my-2 line-clamp-3">
+                    {product.description}
+                  </p>
+
+                  <div className="mt-auto flex justify-between items-center">
+                    <h1 className="font-bold text-green-600 text-md md:text-lg">
+                      ₹{product.price}
+                    </h1>
+                    <button
+                      onClick={() => handleAddToCart(product.product_id)}
+                      disabled={addingToCart === product.product_id}
+                      className={`rounded-full px-4 py-2 transition flex items-center gap-2 ${
+                        addingToCart === product.product_id
+                          ? "bg-gray-400 cursor-not-allowed"
+                          : "bg-[#22BDF5] hover:bg-[#19aee6] text-white"
+                      }`}
+                    >
+                      {addingToCart === product.product_id ? (
+                        <>
+                          <Loader2 size={18} className="animate-spin" />
+                          Adding...
+                        </>
+                      ) : (
+                        <>
+                          <ShoppingCart size={18} />
+                          Add to cart
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ):(
           <div className="text-center py-20">
             <Search className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <h2 className="text-2xl font-bold text-gray-700">No categories found</h2>
             <p className="text-gray-500 mt-2">Try searching with different keywords</p>
-          </div>
+          </div>  
         )}
       </div>
 
