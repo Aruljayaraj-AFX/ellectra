@@ -72,13 +72,11 @@ export default function Shop() {
         } else {
           setProducts([]);
         }
+        setLoading(false);
       } catch (error) {
         console.error("Error fetching products:", error);
         setProducts([]);
       } 
-      finally {
-        setLoading(false);
-      }
     };
     fetchsearchdata();
   },[searchQuery]);
@@ -276,7 +274,7 @@ export default function Shop() {
               </div>
             ))}
           </div>
-        ):(
+        ):categories.length === 0 &&(
           <div className="text-center py-20">
             <Search className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <h2 className="text-2xl font-bold text-gray-700">No categories found</h2>
