@@ -69,10 +69,10 @@ export default function Shop() {
         if (productData && productData.data) {
           setProducts(productData.data);
           console.log(products);
+          setLoading(false);
         } else {
           setProducts([]);
         }
-        setLoading(false);
       } catch (error) {
         console.error("Error fetching products:", error);
         setProducts([]);
