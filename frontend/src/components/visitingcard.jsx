@@ -69,7 +69,7 @@ export default function EnhancedEllectraPage() {
 
         <div className="flex flex-col justify-between w-full gap-4 sm:gap-5">
 
-          <div className="flex  xs:flex-row gap-3 sm:gap-5 justify-center lg:justify-end mt-4 sm:mt-6 md:mt-10">
+          <div className="z-100 flex  xs:flex-row gap-3 sm:gap-5 justify-center lg:justify-end mt-4 sm:mt-6 md:mt-10">
             <div onClick={handleClick} className="border rounded-3xl border-gray-300 shadow-md px-4 sm:px-5 flex gap-2 sm:gap-3 p-2 sm:p-3 items-center cursor-pointer hover:shadow-lg transition-shadow">
               <img src={whatsapp} className="w-8 h-8 sm:w-10 sm:h-10" alt="WhatsApp" />
               <p style={{ fontFamily: "Bai Jamjuree,sans-serif" }} className="text-md sm:text-md md:text-2xl">
