@@ -6,6 +6,7 @@ from models.order_table import past_order_table
 from models.product import product_table
 from models.user import user_table
 from services.user import user_Authorization
+from services.Emailservice import send_email
 from schema.order_schema import PastOrderCreate, PastOrderUpdate
 from models.cart_table import cart_table
 from pydantic import BaseModel
@@ -50,6 +51,7 @@ async def add_past_order(
     token: object = Depends(user_Authorization())
 ):
     try:
+        product_rows_html = ""
         user_email = token.get("email")
         if not user_email:
             raise HTTPException(status_code=401, detail="Invalid token")
@@ -106,6 +108,106 @@ async def add_past_order(
         ).delete(synchronize_session=False)
         
         db.commit()
+        subject = f"Order Placed Successfully - Order #{order_id}"
+
+        product_rows_html += f"""
+    <tr>
+        <td style="padding:10px; border-bottom:1px solid #eee; width:80px;">
+            <img src="{product.product_Img}" width="60" height="60" style="border-radius:6px; object-fit:cover;">
+        </td>
+
+        <td style="padding:10px; border-bottom:1px solid #eee;">
+            <strong>{product.product_name}</strong><br>
+            Quantity: {item.quantity}<br>
+            Price per item: ₹{price_per_item}
+        </td>
+
+        <td style="padding:10px; border-bottom:1px solid #eee; text-align:right;">
+            <strong>₹{item_total}</strong>
+        </td>
+    </tr>
+    """
+     
+        body = f"""
+        <!doctype html>
+        <html>
+        <body style="font-family:Arial; background:#f7f7f7; padding:20px;">
+        
+        <div style="max-width:600px; margin:auto; background:#fff; padding:20px; border-radius:10px;">
+            
+            <div style="text-align:center;">
+                <img src="https://res.cloudinary.com/dosahgtni/image/upload/v1762153393/Ellectra_w01wap.png" width="80">
+                <h2 style="color:#111;">Thank you for your order, {user.user_name}!</h2>
+                <p>Your order has been placed successfully.</p>
+            </div>
+
+            <h3>Order Details</h3>
+
+            <table style="width:100%; border-collapse:collapse;">
+                {product_rows_html}
+            </table>
+
+            <h2 style="text-align:right; margin-top:20px;">
+                Total: ₹{total_amount}
+            </h2>
+
+            <h3>Delivery Address</h3>
+            <p>
+                {order.delivery_address},<br>
+                {order.city} - {order.pincode}<br>
+                Landmark: {order.landmark}
+            </p>
+
+            <p style="margin-top:30px;">
+                Thank you for shopping with <strong>Ellectra</strong>!  
+            </p>
+
+        </div>
+
+        </body>
+        </html>
+        """
+
+        await send_email(to_email=user_email, subject=subject, body=body)
+
+        subjectticket = f"Order vathi iruku iyya - Order #{order_id}"
+
+        bodyticket = f"""
+        <!doctype html>
+        <html>
+        <body style="font-family:Arial; background:#f7f7f7; padding:20px;">
+        
+        <div style="max-width:600px; margin:auto; background:#fff; padding:20px; border-radius:10px;">
+            
+            <div style="text-align:center;">
+                <img src="https://res.cloudinary.com/dosahgtni/image/upload/v1762153393/Ellectra_w01wap.png" width="80">
+                <h2 style="color:#111;">Order by {user.user_name}!</h2>
+                <p>customer contact : {user.user_number}</p>
+                <p>customer email : {user.user_email}</p>
+            </div>
+
+            <h3>Order Details</h3>
+
+            <table style="width:100%; border-collapse:collapse;">
+                {product_rows_html}
+            </table>
+
+            <h2 style="text-align:right; margin-top:20px;">
+                Total: ₹{total_amount}
+            </h2>
+
+            <h3>Delivery Address</h3>
+            <p>
+                {order.delivery_address},<br>
+                {order.city} - {order.pincode}<br>
+                Landmark: {order.landmark}
+            </p>
+        </div>
+
+        </body>
+        </html>
+        """
+        await send_email(to_email="ellectra2025@gmail.com", subject=subjectticket, body=bodyticket)
         return {
             "message": "✅ Order placed successfully",
             "order_id": order_id,
