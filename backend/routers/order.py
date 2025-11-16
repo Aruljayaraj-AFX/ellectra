@@ -85,6 +85,24 @@ async def add_past_order(
                 "price_per_item": price_per_item,
                 "item_total": item_total
             })
+            product_rows_html += f"""
+        <tr>
+            <td style="padding:10px; border-bottom:1px solid #eee; width:80px;">
+                <img src="{product.product_Img}" width="60" height="60"
+                     style="border-radius:6px; object-fit:cover;">
+            </td>
+
+            <td style="padding:10px; border-bottom:1px solid #eee;">
+                <strong>{product.product_name}</strong><br>
+                Quantity: {item.quantity}<br>
+                Price per item: ₹{price_per_item}
+            </td>
+
+            <td style="padding:10px; border-bottom:1px solid #eee; text-align:right;">
+                <strong>₹{item_total}</strong>
+            </td>
+        </tr>
+    """
 
         order_id = await generate_order_id(db)
         new_order = past_order_table(
@@ -110,23 +128,7 @@ async def add_past_order(
         db.commit()
         subject = f"Order Placed Successfully - Order #{order_id}"
 
-        product_rows_html += f"""
-    <tr>
-        <td style="padding:10px; border-bottom:1px solid #eee; width:80px;">
-            <img src="{product.product_Img}" width="60" height="60" style="border-radius:6px; object-fit:cover;">
-        </td>
-
-        <td style="padding:10px; border-bottom:1px solid #eee;">
-            <strong>{product.product_name}</strong><br>
-            Quantity: {item.quantity}<br>
-            Price per item: ₹{price_per_item}
-        </td>
-
-        <td style="padding:10px; border-bottom:1px solid #eee; text-align:right;">
-            <strong>₹{item_total}</strong>
-        </td>
-    </tr>
-    """
+        
      
         body = f"""
         <!doctype html>
