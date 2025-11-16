@@ -213,7 +213,7 @@ export default function Shop() {
               </div>
             ))}
           </div>
-        ) : searchQuery != '' ?(
+        ) : searchQuery != '' &&(
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto">
             {products.map((product)=>(
               <div
@@ -274,12 +274,6 @@ export default function Shop() {
               </div>
             ))}
           </div>
-        ):categories.length === 0 &&(
-          <div className="text-center py-20">
-            <Search className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-            <h2 className="text-2xl font-bold text-gray-700">No categories found</h2>
-            <p className="text-gray-500 mt-2">Try searching with different keywords</p>
-          </div>  
         )}
       </div>
 
