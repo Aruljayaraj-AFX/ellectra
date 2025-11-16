@@ -8,6 +8,7 @@ export default function Shop() {
   const [page, setPage] = useState(1);
   const [products, setProducts] = useState([]);
   const [message, setMessage] = useState("");
+  const [cartMsg, setCartMsg] = useState("");
   const [addingToCart, setAddingToCart] = useState(null);
   const phoneNumber = "916381733447"; 
 
@@ -172,6 +173,17 @@ export default function Shop() {
           Request for Component
         </button>
       </div>
+      {cartMsg && (
+        <div
+          className={`text-center py-3 mb-5 font-semibold ${
+            cartMsg.startsWith("✅")
+              ? "bg-green-100 text-green-700"
+              : "bg-red-100 text-red-700"
+          }`}
+        >
+          {cartMsg}
+        </div>
+      )}
 
       <div className="px-4 md:px-20 lg:px-40 pb-20">
         {loading ? (
@@ -251,7 +263,7 @@ export default function Shop() {
                     <button
                       onClick={() => handleAddToCart(product.product_id)}
                       disabled={addingToCart === product.product_id}
-                      className={`rounded-full px-4 py-2 transition flex items-center gap-2 ${
+                      className={`z-100 cursor-pointer rounded-full px-4 py-2 transition flex items-center gap-2 ${
                         addingToCart === product.product_id
                           ? "bg-gray-400 cursor-not-allowed"
                           : "bg-[#22BDF5] hover:bg-[#19aee6] text-white"
