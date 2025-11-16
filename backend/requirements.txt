@@ -30,3 +30,4 @@ prometheus-fastapi-instrumentator
 asyncpg
 cloudinary
 python-multipart
+aiosmtplib
