@@ -6,6 +6,7 @@ from models.cart_table import cart_table
 from models.product import product_table
 from models.user import user_table
 from services.user import user_Authorization
+from services.Emailservice import send_email
 import uuid
 import random
 
@@ -66,6 +67,119 @@ async def add_to_cart(
             msg = "Item added to cart successfully"
 
         db.commit()
+        subject = "Cart Updated Successfully"
+        body = f"""
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Cart Updated</title>
+</head>
+
+<body style="margin:0; padding:24px; background:#f4f6f8; -webkit-text-size-adjust:none;">
+  <table role="presentation" cellspacing="0" cellpadding="0" align="center" style="width:100%; max-width:680px; margin:0 auto;">
+    <tr>
+      <td style="padding:16px 8px;">
+        
+        <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #eceff1;">
+
+          <tr>
+            <td style="padding:20px 24px; border-bottom:1px solid #f1f3f5;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="vertical-align:middle;">
+                    <img src="https://res.cloudinary.com/dosahgtni/image/upload/v1762153393/Ellectra_w01wap.png" width="80" alt="Store logo" style="display:block; border:0;"/>
+                  </td>
+                  <td style="text-align:right; vertical-align:middle; color:#6b7280; font-size:13px;">
+                    <span style="display:inline-block; padding:6px 10px; border-radius:6px; background:#f3f4f6;">Order update</span>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:20px 24px 8px 24px;">
+              <h1 style="margin:0; font-size:20px; color:#0f172a; font-weight:700;">Hello {user.user_name},</h1>
+              <p style="margin:8px 0 0 0; color:#334155; font-size:15px; line-height:1.4;">
+                Your cart has been updated.
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:16px 24px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="border-radius:10px; border:1px solid #eef2f6;">
+                <tr>
+
+                  <td style="width:120px; padding:12px; vertical-align:top;">
+                    <img src="{product.product_Img}" alt="{product.product_name}" width="96" style="display:block; border-radius:8px; object-fit:cover;">
+                  </td>
+
+                  <td style="padding:12px; vertical-align:top;">
+                    <h3 style="margin:0 0 6px 0; font-size:16px; color:#0f172a;">{product.product_name}</h3>
+
+                    <p style="margin:0 0 10px 0; color:#64748b; font-size:14px;">
+                      Quantity: <strong style="color:#0f172a;">{cart_item.quantity}</strong>
+                    </p>
+
+                    <p style="margin:0 0 10px 0; color:#0f172a; font-size:16px; font-weight:700;">
+                      Price per item: ₹{price}
+                    </p>
+
+                    <table role="presentation" cellpadding="0" cellspacing="0">
+                      <tr>
+                        <td style="padding-right:8px;">
+                          <a href="https://www.ellectra.in/cart" style="background:#0ea5e9; color:#ffffff; border-radius:8px; text-decoration:none; display:inline-block; padding:10px 14px; font-size:14px;">
+                            View Cart
+                          </a>
+                        </td>
+                        <td>
+                          <a href="https://www.ellectra.in/cart" style="background:#f3f4f6; color:#0f172a; border-radius:8px; text-decoration:none; display:inline-block; padding:10px 14px; font-size:14px;">
+                            Checkout
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="padding:8px 24px 22px 24px;">
+              <p style="margin:0; color:#334155; font-size:14px; line-height:1.5;">
+                Thank you for shopping with us!
+              </p>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="background:#fbfdff; padding:14px 24px; border-top:1px solid #f1f3f5; color:#64748b; font-size:13px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td>Need help? <a href="mailto:support@example.com" style="color:#0ea5e9; text-decoration:none;">support@example.com</a></td>
+                  <td style="text-align:right;">
+                    <a href="#" style="color:#64748b; text-decoration:none; margin-right:8px;">Unsubscribe</a>
+                    <span style="color:#cbd5e1;">•</span>
+                    <a href="#" style="color:#64748b; text-decoration:none; margin-left:8px;">Privacy</a>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+        await send_email(to_email=user_email, subject=subject, body=body)
         return {"message": f"✅ {msg}"}
 
     except HTTPException:
