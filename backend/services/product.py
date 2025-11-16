@@ -206,7 +206,6 @@ async def search_products(query: str, db):
             .filter(
                 or_(
                     product_table.product_name.ilike(f"%{query}%"),
-                    product_table.product_description.ilike(f"%{query}%"),
                 )
             )
             .order_by(product_table.created_by.desc())
